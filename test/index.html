@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <script type="text/javascript" src="../dist/platform.umd.js"></script>
+  <script type="text/javascript" src="https://unpkg.com/vconsole@3.1.0/dist/vconsole.min.js"></script>
+  <script>
+    // init vConsole
+    var vConsole = new VConsole();
+    console.log('Hello world');
+  </script>
+</head>
+<body>
+
+<script type="text/javascript">
+  (function () {
+    var setupPlatform = window.platform.setupPlatform;
+
+    var plt = setupPlatform({
+      'dingtalk': {
+        type: 4,
+        settings: {
+          usePushWindow: false, // 方法开启新页面
+          jsSDKUrl: '//g.alicdn.com/dingding/open-develop/1.6.9/dingtalk.js',
+          hideNavBar: true
+        },
+        isMatch: function (plt) {
+          return plt.isPlatformMatch('dingtalk')
+        },
+        versionParser: function (plt) {
+          return plt.matchUserAgentVersion(/dingtalk\/(\d+).(\d+).(\d+)?/i)
+        }
+      },
+      'nexus': {
+        type: 3,
+        isMatch: function (plt) {
+          return plt.isPlatformMatch('nexus', ['nexus'])
+        },
+      }
+    });
+
+    console.log(plt)
+    console.log(plt.versions())
+
+    plt.ready().then(function (data) {
+      console.log('ready', data)
+    })
+  })();
+</script>
+</body>
+</html>

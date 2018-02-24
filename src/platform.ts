@@ -1,8 +1,16 @@
 'use strict';
 import {getCss, isTextInput} from './lib/dom';
 import {QueryParams} from './lib/query-params';
-
-export type DocumentDirection = 'ltr' | 'rtl';
+import {PLATFORM_CONFIGS} from './lib/platform-registry';
+import {
+  BackButtonAction,
+  DocumentDirection,
+  EventListenerOptions,
+  PlatformConfig,
+  PlatformVersion,
+  SDKInfo,
+  Type,
+} from './lib/interface';
 
 /**
  * @name Platform
@@ -29,14 +37,14 @@ export class Platform {
   private _doc: HTMLDocument;
   private _versions: { [name: string]: PlatformVersion } = {};
   private _dir: DocumentDirection;
-  private _lang: string;
-  private _ua: string;
+  private _lang: string = '';
+  private _ua: string = '';
   private _qp = new QueryParams(); // init settings
-  private _nPlt: string;
+  private _nPlt: string = '';
   private _readyPromise: Promise<any>;
   private _readyResolve: any;
   private _bbActions: BackButtonAction[] = [];
-  private _registry: { [name: string]: PlatformConfig };
+  private _registry: { [name: string]: PlatformConfig } = {};
   private _default: string;
   private _pW = 0;
   private _pH = 0;
@@ -60,6 +68,7 @@ export class Platform {
 
   /** @internal */
   _platforms: string[] = [];
+  _settings: any = {};
 
   constructor(platformConfigs: { [key: string]: PlatformConfig }) {
 
@@ -72,21 +81,21 @@ export class Platform {
 
     // init
     this._default = 'core';
-    this._registry = platformConfigs || {};
+    this._registry = platformConfigs || {}; // all platform configs
 
     // set values from "document"
     this._doc = doc;
     this._dir = dir === 'rtl' ? 'rtl' : 'ltr';
     this.isRTL = (dir === 'rtl');
-    this._lang = docElement.lang;
+    this.setLang(docElement.lang, false);
 
     // set css properties
     this.Css = getCss(docElement);
 
     // set values from "window"
     this._win = win;
-    this._nPlt = platform;
-    this._ua = userAgent;
+    this.setNavigatorPlatform(platform);
+    this.setUserAgent(userAgent);
 
     // set location values
     this.setQueryParams(win.location.href);
@@ -107,6 +116,8 @@ export class Platform {
 
     // init
     this.init();
+
+    this.prepareReady();
   }
 
   /**
@@ -142,6 +153,10 @@ export class Platform {
    */
   setCssProps(docElement: HTMLElement) {
     this.Css = getCss(docElement);
+  }
+
+  settings(): any {
+    return this._settings;
   }
 
 
@@ -182,8 +197,6 @@ export class Platform {
    * | ipad            | on an iPad device.                 |
    * | iphone          | on an iPhone device.               |
    * | mobile          | on a mobile device.                |
-   * | mobileweb       | in a browser on a mobile device.   |
-   * | phablet         | on a phablet device.               |
    * | tablet          | on a tablet device.                |
    * | windows         | on a device running Windows.       |
    *
@@ -242,17 +255,17 @@ export class Platform {
     return this._versions;
   }
 
-  /**
-   * @hidden
-   */
-  version(): PlatformVersion {
-    for (var platformName in this._versions) {
-      if (this._versions[platformName]) {
-        return this._versions[platformName];
-      }
-    }
-    return {};
-  }
+  // /**
+  //  * @hidden
+  //  */
+  // version(): PlatformVersion {
+  //   for (var platformName in this._versions) {
+  //     if (this._versions[platformName]) {
+  //       return this._versions[platformName];
+  //     }
+  //   }
+  //   return {};
+  // }
 
   /**
    * Returns a promise when the platform is ready and native functionality
@@ -295,9 +308,7 @@ export class Platform {
    * such as Cordova or Electron, then it uses the default DOM ready.
    */
   triggerReady(readySource: string) {
-    // this.zone.run(() => {
     this._readyResolve(readySource);
-    // });
   }
 
   /**
@@ -606,8 +617,10 @@ export class Platform {
     if (this._isPortrait === null || this._isPortrait === false && this._win['innerWidth'] < this._win['innerHeight']) {
       var win = this._win;
 
-      var innerWidth = win['innerWidth'];
-      var innerHeight = win['innerHeight'];
+      // var innerWidth = win['innerWidth'];
+      var innerWidth = win.screen.width;
+      // var innerHeight = win['innerHeight'];
+      var innerHeight = win.screen.height;
 
       // we're keeping track of portrait and landscape dimensions
       // separately because the virtual keyboard can really mess
@@ -648,41 +661,6 @@ export class Platform {
 
       }
     }
-  }
-
-  /**
-   * @hidden
-   * This requestAnimationFrame will NOT be wrapped by zone.
-   */
-  raf(callback: { (timeStamp?: number): void } | Function): number {
-    const win: any = this._win;
-    return win.requestAnimationFrame(callback);
-  }
-
-  /**
-   * @hidden
-   */
-  cancelRaf(rafId: number) {
-    const win: any = this._win;
-    return win.cancelAnimationFrame(rafId);
-  }
-
-  /**
-   * @hidden
-   * This setTimeout will NOT be wrapped by zone.
-   */
-  timeout(callback: Function, timeout?: number): number {
-    const win: any = this._win;
-    return win.setTimeout(callback, timeout);
-  }
-
-  /**
-   * @hidden
-   * This setTimeout will NOT be wrapped by zone.
-   */
-  cancelTimeout(timeoutId: number) {
-    const win: any = this._win;
-    win.clearTimeout(timeoutId);
   }
 
   /**
@@ -735,8 +713,8 @@ export class Platform {
     }
 
     if (el) {
-      this.registerListener(el, 'webkitTransitionEnd', <any>onTransitionEnd, {zone: zone}, unRegs);
-      this.registerListener(el, 'transitionend', <any>onTransitionEnd, {zone: zone}, unRegs);
+      this.registerListener(el, 'webkitTransitionEnd', <any>onTransitionEnd, {}, unRegs);
+      this.registerListener(el, 'transitionend', <any>onTransitionEnd, {}, unRegs);
     }
 
     return unregister;
@@ -752,12 +730,11 @@ export class Platform {
 
     if (doc.readyState === 'complete') {
       callback(win, doc);
-
     } else {
       unreg = this.registerListener(win, 'load', () => {
         unreg && unreg();
         callback(win, doc);
-      }, {zone: false});
+      }, {});
     }
   }
 
@@ -796,10 +773,10 @@ export class Platform {
   /**
    * @hidden
    */
-  // focusOutActiveElement() {
-  //   const activeElement: any = this.getActiveElement();
-  //   activeElement && activeElement.blur && activeElement.blur();
-  // }
+  focusOutActiveElement() {
+    const activeElement: any = this.getActiveElement();
+    activeElement && activeElement.blur && activeElement.blur();
+  }
 
   private _initEvents() {
     // Test via a getter in the options object to see if the passive property is accessed
@@ -816,12 +793,11 @@ export class Platform {
     }
 
     // add the window resize event listener XXms after
-    this.timeout(() => {
-      var timerId: any;
+    window.setTimeout(() => {
+      var timerId: number;
       this.registerListener(this._win, 'resize', () => {
-        clearTimeout(timerId);
-
-        timerId = setTimeout(() => {
+        window.clearTimeout(timerId);
+        timerId = window.setTimeout(() => {
           // setting _isPortrait to null means the
           // dimensions will need to be looked up again
           if (this.hasFocusedTextInput() === false) {
@@ -868,6 +844,8 @@ export class Platform {
 
   /**
    * @hidden
+   * separate by ';'
+   * @example core;ios;iphone -> ios
    */
   testQuery(queryValue: string, queryTestValue: string): boolean {
     const valueSplit = queryValue.toLowerCase().split(';');
@@ -891,7 +869,8 @@ export class Platform {
       if (val) {
         return {
           major: val[1],
-          minor: val[2]
+          minor: val[2],
+          patch: val[3],
         };
       }
     }
@@ -907,8 +886,8 @@ export class Platform {
   /**
    * @hidden
    */
-  isPlatformMatch(queryStringName: string, userAgentAtLeastHas?: string[], userAgentMustNotHave: string[] = []): boolean {
-    const queryValue = this._qp.get('ionicplatform');
+  isPlatformMatch(queryStringName: string, userAgentAtLeastHas?: (string | RegExp)[], userAgentMustNotHave: string[] = []): boolean {
+    const queryValue = this._qp.get('platform');
     if (queryValue) {
       return this.testQuery(queryValue, queryStringName);
     }
@@ -916,11 +895,10 @@ export class Platform {
     userAgentAtLeastHas = userAgentAtLeastHas || [queryStringName];
 
     const userAgent = this._ua.toLowerCase();
-
     for (var i = 0; i < userAgentAtLeastHas.length; i++) {
-      if (userAgent.indexOf(userAgentAtLeastHas[i]) > -1) {
+      if (!!userAgent.match(userAgentAtLeastHas[i])) {
         for (var j = 0; j < userAgentMustNotHave.length; j++) {
-          if (userAgent.indexOf(userAgentMustNotHave[j]) > -1) {
+          if (!!userAgent.match(userAgentMustNotHave[j])) {
             return false;
           }
         }
@@ -931,137 +909,139 @@ export class Platform {
     return false;
   }
 
-  /** @hidden */
-  init() {
-    this._initEvents();
-
-    var rootPlatformNode: PlatformNode | null = null;
-    var enginePlatformNode: PlatformNode | null = null;
-
-    // figure out the most specific platform and active engine
-    let tmpPlt: PlatformNode | null;
-    for (let platformName in this._registry) {
-
-      tmpPlt = this.matchPlatform(platformName);
-      if (tmpPlt) {
-        // we found a platform match!
-        // check if its more specific than the one we already have
-
-        if (tmpPlt.isEngine) {
-          // because it matched then this should be the active engine
-          // you cannot have more than one active engine
-          enginePlatformNode = tmpPlt;
-
-        } else if (!rootPlatformNode || tmpPlt.depth > rootPlatformNode.depth) {
-          // only find the root node for platforms that are not engines
-          // set this node as the root since we either don't already
-          // have one, or this one is more specific that the current one
-          rootPlatformNode = tmpPlt;
-        }
-      }
-    }
-
-    if (!rootPlatformNode) {
-      rootPlatformNode = new PlatformNode(this._registry, this._default);
-    }
-
-    // build a Platform instance filled with the
-    // hierarchy of active platforms and settings
-
-    if (rootPlatformNode) {
-
-      // check if we found an engine node (cordova/node-webkit/etc)
-      if (enginePlatformNode) {
-        // add the engine to the first in the platform hierarchy
-        // the original rootPlatformNode now becomes a child
-        // of the engineNode, which is not the new root
-        enginePlatformNode.child = rootPlatformNode;
-        rootPlatformNode.parent = enginePlatformNode;
-        rootPlatformNode = enginePlatformNode;
-      }
-
-      let platformNode: PlatformNode | null = rootPlatformNode;
-      while (platformNode) {
-        insertSuperset(this._registry, platformNode);
-        platformNode = platformNode.child;
-      }
-
-      // make sure the root noot is actually the root
-      // incase a node was inserted before the root
-      platformNode = rootPlatformNode.parent;
-      while (platformNode) {
-        rootPlatformNode = platformNode;
-        platformNode = platformNode.parent;
-      }
-
-      platformNode = rootPlatformNode;
-      while (platformNode) {
-        platformNode.initialize(this);
-
-        // extra check for ipad pro issue
-        // https://forums.developer.apple.com/thread/25948
-        if (platformNode.name === 'iphone' && this.navigatorPlatform() === 'iPad') {
-          // this is an ipad pro so push ipad and tablet to platforms
-          // and then return as we are done
-          this._platforms.push('tablet');
-          this._platforms.push('ipad');
-          return;
-        }
-
-        // set the array of active platforms with
-        // the last one in the array the most important
-        this._platforms.push(platformNode.name);
-
-        // get the platforms version if a version parser was provided
-        this._versions[platformNode.name] = platformNode.version(this);
-
-        // go to the next platform child
-        platformNode = platformNode.child;
-      }
-    }
-
-    if (this._platforms.indexOf('mobile') > -1 && this._platforms.indexOf('cordova') === -1) {
-      this._platforms.push('mobileweb');
-    }
+  /**
+   * @hidden
+   */
+  loadScript(url: string, cb: Function) {
+    let _head: HTMLHeadElement = document.getElementsByTagName('head')[0];
+    let _script: HTMLScriptElement = document.createElement('script');
+    _script.setAttribute('type', 'text/javascript');
+    _script.setAttribute('src', url);
+    _head.appendChild(_script);
+    _script.onload = function () {
+      /* istanbul ignore next */
+      cb && cb.call(null);
+    };
   }
 
   /**
    * @hidden
    */
-  private matchPlatform(platformName: string): PlatformNode | null {
-    // build a PlatformNode and assign config data to it
-    // use it's getRoot method to build up its hierarchy
-    // depending on which platforms match
-    let platformNode = new PlatformNode(this._registry, platformName);
-    let rootNode = platformNode.getRoot(this);
+  loadJsSDK(sdkInfo: SDKInfo, successCallback: Function, errorCallback: Function): void {
+    const {jsSDKUrl, jsSDKName, jsSDKEventName, timeout = 10000} = sdkInfo;
 
-    if (rootNode) {
-      rootNode.depth = 0;
-      let childPlatform = rootNode.child;
-      while (childPlatform) {
-        rootNode.depth++;
-        childPlatform = childPlatform.child;
+    if (!jsSDKName) {
+      errorCallback(`Please input the name of JSSDK!`);
+      return;
+    }
+    if (!jsSDKUrl) {
+      errorCallback(`JSSDK ${jsSDKName} loaded without jsSDKUrl params!`);
+      return;
+    }
+    if (!jsSDKEventName) {
+      errorCallback(`JSSDK ${jsSDKName} loaded without jsSDKEventName params!`);
+      return;
+    }
+
+    const win: any = this.win();
+    let timer = window.setTimeout(() => {
+      errorCallback(`JSSDK ${jsSDKName} loaded timeout!`);
+    }, timeout);
+
+    if (win[jsSDKName] !== undefined) {
+      successCallback(`JSSDK ${jsSDKName} already loaded!`);
+      timer && window.clearTimeout(timer);
+    } else {
+      this.loadScript(jsSDKUrl, () => {
+        function beforeBridgeReady() {
+          // 解除绑定
+          if (document.removeEventListener) {
+            document.removeEventListener(jsSDKEventName, beforeBridgeReady);
+          }
+
+          successCallback(`JSSDK ${jsSDKName} loaded by JsSDKLoader!`);
+          timer && window.clearTimeout(timer);
+        }
+
+        if (win[jsSDKName] === undefined) {
+          if (document.addEventListener) {
+            document.addEventListener(jsSDKEventName, beforeBridgeReady, false);
+          }
+        } else {
+          beforeBridgeReady();
+        }
+      });
+    }
+  }
+
+  /** @hidden */
+  init() {
+
+    // 1. resize event init
+    this._initEvents();
+
+    var _platforms: { [key: string]: PlatformNode } = {};
+
+    for (let name in this._registry) {
+      let _tmp: PlatformNode = new PlatformNode(this._registry, name);
+
+      if (_tmp.isMatch(this)) {
+        if (_tmp.type !== undefined) {
+          _platforms[_tmp.type] = _tmp;
+          _platforms[_tmp.type].name = name;
+        } else {
+          console.warn('You have miss something of "type"');
+          console.log(name, _tmp);
+        }
       }
     }
-    return rootNode;
-  }
 
-}
+    for (let name in _platforms) {
+      // 1. this._platforms
+      let _tmp: PlatformNode = _platforms[name];
+      this._platforms.push(_tmp.name);
 
-function insertSuperset(registry: any, platformNode: PlatformNode) {
-  let supersetPlaformName = platformNode.superset();
-  if (supersetPlaformName) {
-    // add a platform in between two exist platforms
-    // so we can build the correct hierarchy of active platforms
-    let supersetPlatform = new PlatformNode(registry, supersetPlaformName);
-    supersetPlatform.parent = platformNode.parent;
-    supersetPlatform.child = platformNode;
-    if (supersetPlatform.parent) {
-      supersetPlatform.parent.child = supersetPlatform;
+      // 2. this._versions
+      this._versions[_tmp.name] = _tmp.version(this);
+
+      // 3. reduce settings
+      _tmp.reduceSettings(this._settings);
+
+      // 4. initialize
+      _tmp.initialize(this);
     }
-    platformNode.parent = supersetPlatform;
+
+    if (Object.keys(_platforms).indexOf('4') === -1) {
+      this._platforms.push('web');
+    }
+
+    if (Object.keys(_platforms).indexOf('0') === -1) {
+      this._platforms.unshift(this._default);
+    }
+
+    console.log(this._platforms);
+    console.log(this._versions);
+    console.log(this._settings);
+    console.log(_platforms);
+    console.log(Object.keys(_platforms));
+
   }
 }
+
+// function insertSuperset(registry: any, platformNode: PlatformNode) {
+//   let supersetPlaformName = platformNode.superset();
+//   if (supersetPlaformName) {
+//     // add a platform in between two exist platforms
+//     // so we can build the correct hierarchy of active platforms
+//     let supersetPlatform = new PlatformNode(registry, supersetPlaformName);
+//     supersetPlatform.parent = platformNode.parent;
+//     supersetPlatform.child = platformNode;
+//     if (supersetPlatform.parent) {
+//       supersetPlatform.parent.child = supersetPlatform;
+//     }
+//     platformNode.parent = supersetPlatform;
+//   }
+// }
 
 /**
  * @hidden
@@ -1069,24 +1049,21 @@ function insertSuperset(registry: any, platformNode: PlatformNode) {
 class PlatformNode {
   private c: PlatformConfig;
 
-  parent: PlatformNode | null = null;
-  child: PlatformNode | null = null;
   name: string = '';
-  isEngine: boolean = false;
-  depth: number = -1;
+  type: Type = 0;
 
   constructor(public registry: { [name: string]: PlatformConfig }, platformName: string) {
     this.c = registry[platformName];
     this.name = platformName;
-    this.isEngine = this.c.isEngine as boolean;
+    this.type = this.c.type;
   }
 
-  settings(): any {
+  reduceSettings(totalSettings: any): any {
+    return Object.assign(totalSettings, this.settings());
+  }
+
+  settings() {
     return this.c.settings || {};
-  }
-
-  superset(): any {
-    return this.c.superset;
   }
 
   isMatch(p: Platform): boolean {
@@ -1101,123 +1078,48 @@ class PlatformNode {
     if (this.c.versionParser) {
       const v = this.c.versionParser(plt);
       if (v) {
-        const str = v.major + '.' + v.minor;
+        if (!v.major) v.major = '0';
+        if (!v.minor) v.minor = '0';
+        if (!v.patch) v.patch = '0';
+        const str = v.major + '.' + v.minor + (v.patch ? '.' + v.patch : '');
         return {
           str: str,
           num: parseFloat(str),
           major: parseInt(v.major, 10),
-          minor: parseInt(v.minor, 10)
+          minor: parseInt(v.minor, 10),
+          patch: parseInt(v.patch, 10),
         };
       }
     }
     return {};
   }
+}
 
-  getRoot(plt: Platform): PlatformNode | null {
-    if (this.isMatch(plt)) {
 
-      let parents = this.getSubsetParents(this.name);
+/**
+ * @hidden
+ */
+export function setupPlatform(platformConfigs: { [key: string]: PlatformConfig }): Platform {
 
-      if (!parents.length) {
-        return this;
+  let _finalConf = PLATFORM_CONFIGS;
+
+  const isObject = (val: any) => typeof val === 'object';
+
+  for (let outerKey in platformConfigs) {
+    if (_finalConf[outerKey] && isObject(_finalConf[outerKey])) {
+      let _cusConf: any = platformConfigs[outerKey];
+      let _defConf: any = _finalConf[outerKey];
+      for (let innerKey in _cusConf) {
+        let _tmp = {};
+        _tmp = Object.assign(_cusConf[innerKey], _defConf[innerKey]);
+        _defConf[innerKey] = _tmp;
       }
-
-      // let platformNode: PlatformNode = null;
-      // let rootPlatformNode: PlatformNode = null;
-
-      for (let i = 0; i < parents.length; i++) {
-        let platformNode = new PlatformNode(this.registry, parents[i]);
-        platformNode.child = this;
-
-        let rootPlatformNode = platformNode.getRoot(plt);
-        if (rootPlatformNode) {
-          this.parent = platformNode;
-          return rootPlatformNode;
-        }
-      }
+    } else {
+      _finalConf[outerKey] = platformConfigs[outerKey];
     }
-
-    return null;
   }
 
-  getSubsetParents(subsetPlatformName: string): string[] {
-    const parentPlatformNames: string[] = [];
+  const plt = new Platform(_finalConf);
 
-    for (let platformName in this.registry) {
-      let pltConfig: PlatformConfig = this.registry[platformName];
-
-      if (pltConfig.subsets && pltConfig.subsets.indexOf(subsetPlatformName) > -1) {
-        parentPlatformNames.push(platformName);
-      }
-    }
-
-    return parentPlatformNames;
-  }
+  return plt;
 }
-
-
-export interface PlatformConfig {
-  isEngine?: boolean;
-  initialize?: Function;
-  isMatch?: Function;
-  superset?: string;
-  subsets?: string[];
-  settings?: any;
-  versionParser?: any;
-}
-
-export interface PlatformVersion {
-  str?: string;
-  num?: number;
-  major?: number;
-  minor?: number;
-}
-
-interface BackButtonAction {
-  fn: Function;
-  priority: number;
-}
-
-
-export interface EventListenerOptions {
-  capture?: boolean;
-  passive?: boolean;
-  zone?: boolean;
-}
-
-
-// /**
-//  * @hidden
-//  */
-// export function setupPlatform(doc: HTMLDocument, platformConfigs: { [key: string]: PlatformConfig }, zone: NgZone): Platform {
-//   const plt = new Platform();
-//   plt.setDefault('core');
-//   plt.setPlatformConfigs(platformConfigs);
-//
-//   // set values from "document"
-//   const docElement = doc.documentElement;
-//   plt.setDocument(doc);
-//   const dir = docElement.dir;
-//   plt.setDir(dir === 'rtl' ? 'rtl' : 'ltr', !dir);
-//   plt.setLang(docElement.lang, false);
-//
-//   // set css properties
-//   plt.setCssProps(docElement);
-//
-//   // set values from "window"
-//   const win = doc.defaultView;
-//   plt.setWindow(win);
-//   plt.setNavigatorPlatform(win.navigator.platform);
-//   plt.setUserAgent(win.navigator.userAgent);
-//
-//   // set location values
-//   plt.setQueryParams(win.location.href);
-//
-//   plt.init();
-//
-//   // add the platform obj to the window
-//   (<any>win)['Ionic'] = (<any>win)['Ionic'] || {};
-//   (<any>win)['Ionic']['platform'] = plt;
-//
-//   return plt;
-// }

@@ -1,47 +1,57 @@
 'use strict';
 
-import {Platform, PlatformConfig} from '../platform';
-import {isCordova, isElectron, isIos, isIosUIWebView} from './platform-utils';
-
+import {Platform} from '../platform';
+import {PlatformConfig, Type} from './interface';
+import {
+  isAndroid,
+  isCordova,
+  isDesktop,
+  isElectron,
+  isIos,
+  isIosUIWebView,
+  isLinux,
+  isMac,
+  isMobile,
+  isTablet,
+  isWindows
+} from './platform-utils';
 
 export const PLATFORM_CONFIGS: { [key: string]: PlatformConfig } = {
 
-  /**
-   * core
-   */
-  'core': {
+
+  'mobile': {
+    type: Type.PLATFORM,
     settings: {
-      mode: 'md',
-      keyboardHeight: 290
-    }
-  },
-
-  /**
-   * mobile
-   */
-  'mobile': {},
-
-  /**
-   * phablet
-   */
-  'phablet': {
+      hoverCSS: false,
+    },
     isMatch(plt: Platform) {
-      let smallest = Math.min(plt.width(), plt.height());
-      let largest = Math.max(plt.width(), plt.height());
-      return (smallest > 390 && smallest < 520) &&
-        (largest > 620 && largest < 800);
+      return isMobile(plt);
     }
   },
 
   /**
-   * tablet
+   * tablet: 平板电脑, pad
    */
   'tablet': {
+    type: Type.PLATFORM,
+    settings: {
+      hoverCSS: false,
+    },
     isMatch(plt: Platform) {
-      let smallest = Math.min(plt.width(), plt.height());
-      let largest = Math.max(plt.width(), plt.height());
-      return (smallest > 460 && smallest < 820) &&
-        (largest > 780 && largest < 1400);
+      return isTablet(plt);
+    }
+  },
+
+  /**
+   * desktop: 桌面
+   */
+  'desktop': {
+    type: Type.PLATFORM,
+    settings: {
+      hoverCSS: true,
+    },
+    isMatch(plt: Platform) {
+      return isDesktop(plt);
     }
   },
 
@@ -49,48 +59,16 @@ export const PLATFORM_CONFIGS: { [key: string]: PlatformConfig } = {
    * android
    */
   'android': {
-    superset: 'mobile',
-    subsets: [
-      'phablet',
-      'tablet'
-    ],
+    type: Type.SYSTEM,
     settings: {
-      activator: function (plt: Platform): string {
-        // md mode defaults to use ripple activator
-        // however, under-powered devices shouldn't use ripple
-        // if this a linux device, and is using Android Chrome v36 (Android 5.0)
-        // or above then use ripple, otherwise do not use a ripple effect
-        if (plt.testNavigatorPlatform('linux')) {
-          let chromeVersion = plt.matchUserAgentVersion(/Chrome\/(\d+).(\d+)?/);
-
-          const major = plt.version().major;
-
-          if (chromeVersion) {
-            // linux android device using modern android chrome browser gets ripple
-            if (parseInt(chromeVersion.major, 10) < 36 || (major && major < 5)) {
-              return 'none';
-            } else {
-              return 'ripple';
-            }
-          }
-          // linux android device not using chrome browser checks just android's version
-          if (major && major < 5) {
-            return 'none';
-          }
-        }
-
-        // fallback to always use ripple
-        return 'ripple';
-      },
       autoFocusAssist: 'immediate',
       inputCloning: true,
       scrollAssist: true,
-      hoverCSS: false,
       keyboardHeight: 300,
       mode: 'md',
     },
     isMatch(plt: Platform) {
-      return plt.isPlatformMatch('android', ['android', 'silk'], ['windows phone']);
+      return isAndroid(plt);
     },
     versionParser(plt: Platform) {
       return plt.matchUserAgentVersion(/Android (\d+).(\d+)?/);
@@ -101,15 +79,10 @@ export const PLATFORM_CONFIGS: { [key: string]: PlatformConfig } = {
    * ios
    */
   'ios': {
-    superset: 'mobile',
-    subsets: [
-      'ipad',
-      'iphone'
-    ],
+    type: Type.SYSTEM,
     settings: {
       autoFocusAssist: 'delay',
       hideCaretOnScroll: true,
-      hoverCSS: false,
       inputBlurring: isIos,
       inputCloning: isIos,
       keyboardHeight: 250,
@@ -120,10 +93,9 @@ export const PLATFORM_CONFIGS: { [key: string]: PlatformConfig } = {
       virtualScrollEventAssist: isIosUIWebView,
       disableScrollAssist: isIos,
       scrollAssist: isIos,
-      keyboardResizes: keyboardResizes,
     },
     isMatch(plt: Platform) {
-      return plt.isPlatformMatch('ios', ['iphone', 'ipad', 'ipod'], ['windows phone']);
+      return isIos(plt);
     },
     versionParser(plt: Platform) {
       return plt.matchUserAgentVersion(/OS (\d+)_(\d+)?/);
@@ -131,10 +103,53 @@ export const PLATFORM_CONFIGS: { [key: string]: PlatformConfig } = {
   },
 
   /**
+   * Desktop: Windows
+   */
+  'windows': {
+    type: Type.SYSTEM,
+    settings: {
+      mode: 'wp',
+      autoFocusAssist: 'immediate',
+      hoverCSS: false
+    },
+    isMatch(plt: Platform): boolean {
+      return isWindows(plt);
+    },
+    versionParser(plt: Platform): any {
+      // TODO: no win mobile drive
+      return plt.matchUserAgentVersion(/Windows Phone (\d+).(\d+)?/);
+    }
+  },
+
+  'mac': {
+    type: Type.SYSTEM,
+    isMatch(plt: Platform): boolean {
+      return isMac(plt);
+    },
+  },
+
+  'linux': {
+    type: Type.SYSTEM,
+    isMatch(plt: Platform): boolean {
+      return isLinux(plt);
+    },
+  },
+
+  /**
+   * iphone
+   */
+  'iphone': {
+    type: Type.BRAND,
+    isMatch(plt: Platform) {
+      return plt.isPlatformMatch('iphone');
+    }
+  },
+
+  /**
    * ipad
    */
   'ipad': {
-    superset: 'tablet',
+    type: Type.BRAND,
     settings: {
       keyboardHeight: 500,
     },
@@ -144,46 +159,11 @@ export const PLATFORM_CONFIGS: { [key: string]: PlatformConfig } = {
   },
 
   /**
-   * iphone
-   */
-  'iphone': {
-    subsets: [
-      'phablet'
-    ],
-    isMatch(plt: Platform) {
-      return plt.isPlatformMatch('iphone');
-    }
-  },
-
-  /**
-   * Windows
-   */
-  'windows': {
-    superset: 'mobile',
-    subsets: [
-      'phablet',
-      'tablet'
-    ],
-    settings: {
-      mode: 'wp',
-      autoFocusAssist: 'immediate',
-      hoverCSS: false
-    },
-    isMatch(plt: Platform): boolean {
-      return plt.isPlatformMatch('windows', ['windows phone']);
-    },
-    versionParser(plt: Platform): any {
-      return plt.matchUserAgentVersion(/Windows Phone (\d+).(\d+)?/);
-    }
-  },
-
-  /**
    * cordova
    */
   'cordova': {
-    isEngine: true,
+    type: Type.ENVIRONMENT,
     initialize: function (plt: Platform) {
-
       // prepare a custom "ready" for cordova "deviceready"
       plt.prepareReady = function () {
         // 1) ionic bootstrapped
@@ -208,7 +188,7 @@ export const PLATFORM_CONFIGS: { [key: string]: PlatformConfig } = {
 
             // cordova has its own exitApp method
             plt.exitApp = function () {
-              (<any>win)['navigator']['app'].exitApp();
+              // (<any>win)['navigator']['app'].exitApp();
             };
 
             // cordova has fully loaded and we've added listeners
@@ -216,7 +196,6 @@ export const PLATFORM_CONFIGS: { [key: string]: PlatformConfig } = {
           });
         });
       };
-
     },
     isMatch(plt: Platform): boolean {
       return isCordova(plt);
@@ -227,7 +206,7 @@ export const PLATFORM_CONFIGS: { [key: string]: PlatformConfig } = {
    * electron
    */
   'electron': {
-    superset: 'core',
+    type: Type.ENVIRONMENT,
     initialize: function (plt: Platform) {
       plt.prepareReady = function () {
         // 1) ionic bootstrapped
@@ -239,13 +218,67 @@ export const PLATFORM_CONFIGS: { [key: string]: PlatformConfig } = {
     isMatch(plt: Platform): boolean {
       return isElectron(plt);
     }
-  }
-};
+  },
 
-function keyboardResizes(plt: Platform): boolean {
-  const win = <any>plt.win();
-  if (win.Ionic && win.Ionic.keyboardResizes === true) {
-    return true;
-  }
-  return false;
-}
+  'wechat': {
+    type: Type.ENVIRONMENT,
+    initialize: function (plt: Platform) {
+      plt.prepareReady = function () {
+        // 1) ionic bootstrapped
+        plt.windowLoad(function () {
+          plt.triggerReady('wechat');
+        });
+      };
+    },
+    settings: {
+      jsSDKUrl: '//res.wx.qq.com/open/js/jweixin-1.0.0.js',
+      hideNavBar: true
+    },
+    isMatch(plt: Platform) {
+      return plt.isPlatformMatch('wechat', ['micromessenger']);
+    },
+    versionParser(plt: Platform) {
+      return plt.matchUserAgentVersion(/micromessenger\/(\d+).(\d+).(\d+)?/i);
+    }
+  },
+
+  'alipay': {
+    type: Type.ENVIRONMENT,
+    initialize: function (plt: Platform) {
+      plt.prepareReady = function () {
+        const jsSDKUrl = '//a.alipayobjects.com/g/h5-lib/alipayjsapi/3.0.2/alipayjsapi.min.js';
+        const jsSDKName = 'AlipayJSBridge';
+        const jsSDKEventName = 'AlipayJSBridgeReady';
+        plt.loadJsSDK({jsSDKUrl, jsSDKName, jsSDKEventName, timeout: 100}, function (successData: any) {
+          console.debug(successData);
+        }, function (erorData: any) {
+          console.debug(erorData);
+        });
+      };
+    },
+    settings: {
+      usePushWindow: false, // 页面切换使用alipay提供的 pushWindow() 方法开启新页面
+      hideNavBar: true
+    },
+    isMatch(plt: Platform) {
+      return plt.isPlatformMatch('alipay', ['alipay', 'alipayclient']);
+    },
+    versionParser(plt: Platform) {
+      return plt.matchUserAgentVersion(/alipayclient\/(\d+).(\d+).(\d+)?/i);
+    },
+  },
+
+  /**
+   * core
+   */
+  'core': {
+    type: Type.BASE,
+    settings: {
+      mode: 'md',
+      keyboardHeight: 290
+    },
+    isMatch() {
+      return true;
+    }
+  },
+};
