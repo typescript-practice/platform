@@ -69,9 +69,9 @@ function setupPlatform(platformConfigs: PlatformConfigs): Platform {
 }
 ```
 
-### ```mergeConfigs(defaultConfigs: PlatformConfigs, customerConfig: PlatformConfigs)```
+### ```mergeConfigs(defConfig: PlatformConfigs, custConfig: PlatformConfigs)```
 
-Merge Parameters, and the priority here: 
+Merge Parameters, and the priority is: 
 
 1. Custom parameters have higher priority than the default configuration,
     such as `core` configuration, custom priority is higher than the default.
@@ -79,8 +79,8 @@ Merge Parameters, and the priority here:
     the higher the priority is, for example: core < mobile < ios < iphone < cordova.
 3. The plain object will use `assign` to collect params, other types of parameters will be replaced directly.
 
-* `@param {PlatformConfigs} defaultConfigs ` - The dist configs
-* `@param {PlatformConfigs} customerConfigs ` - The customer configs
+* `@param {PlatformConfigs} defConfig ` - The dist configs
+* `@param {PlatformConfigs} custConfig ` - The customer configs
 * `@return {PlatformConfigs}` 
 
 ### ```PLATFORM_CONFIGS```

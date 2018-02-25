@@ -31,9 +31,9 @@ export {mergeConfigs, PLATFORM_CONFIGS};
  *
  * @example
  * ```ts
- * import Platform from 'tp-platform';
+ * import { Platform } from 'tp-platform';
  *
- * const platform = new Platform();
+ * const plt = new Platform({});
  * ```
  */
 export class Platform {

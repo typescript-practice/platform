@@ -6,7 +6,7 @@ import assign from 'lodash/assign';
 /**
  * @name mergeConfigs
  * @description
- * Merge Parameters, and the priority here:
+ * Merge Parameters, and the priority is:
  * 1. Custom parameters have higher priority than the default configuration,
  *     such as `core` configuration, custom priority is higher than the default.
  * 2. In the `plt.platforms()` array, the more advanced Platform parameters,
