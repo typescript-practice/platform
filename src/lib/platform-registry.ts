@@ -17,7 +17,18 @@ import {
 } from './platform-utils';
 
 export const PLATFORM_CONFIGS: { [key: string]: PlatformConfig } = {
-
+  /**
+   * core
+   */
+  'core': {
+    type: Type.BASE,
+    settings: {
+      mode: 'md',
+    },
+    isMatch() {
+      return true;
+    }
+  },
 
   'mobile': {
     type: Type.PLATFORM,
@@ -61,11 +72,10 @@ export const PLATFORM_CONFIGS: { [key: string]: PlatformConfig } = {
   'android': {
     type: Type.SYSTEM,
     settings: {
-      autoFocusAssist: 'immediate',
-      inputCloning: true,
-      scrollAssist: true,
-      keyboardHeight: 300,
       mode: 'md',
+      autoFocusAssist: 'immediate',
+      tapPolyfill: true,
+      scrollAssist: true,
     },
     isMatch(plt: Platform) {
       return isAndroid(plt);
@@ -81,18 +91,10 @@ export const PLATFORM_CONFIGS: { [key: string]: PlatformConfig } = {
   'ios': {
     type: Type.SYSTEM,
     settings: {
-      autoFocusAssist: 'delay',
-      hideCaretOnScroll: true,
-      inputBlurring: isIos,
-      inputCloning: isIos,
-      keyboardHeight: 250,
       mode: 'ios',
-      statusbarPadding: isCordova,
-      swipeBackEnabled: isIos,
+      autoFocusAssist: 'delay',
       tapPolyfill: isIosUIWebView,
-      virtualScrollEventAssist: isIosUIWebView,
-      disableScrollAssist: isIos,
-      scrollAssist: isIos,
+      scrollAssist: false,
     },
     isMatch(plt: Platform) {
       return isIos(plt);
@@ -110,7 +112,6 @@ export const PLATFORM_CONFIGS: { [key: string]: PlatformConfig } = {
     settings: {
       mode: 'wp',
       autoFocusAssist: 'immediate',
-      hoverCSS: false
     },
     isMatch(plt: Platform): boolean {
       return isWindows(plt);
@@ -128,6 +129,9 @@ export const PLATFORM_CONFIGS: { [key: string]: PlatformConfig } = {
     },
   },
 
+  /**
+   * for desktop
+   */
   'linux': {
     type: Type.SYSTEM,
     isMatch(plt: Platform): boolean {
@@ -217,68 +221,6 @@ export const PLATFORM_CONFIGS: { [key: string]: PlatformConfig } = {
     },
     isMatch(plt: Platform): boolean {
       return isElectron(plt);
-    }
-  },
-
-  'wechat': {
-    type: Type.ENVIRONMENT,
-    initialize: function (plt: Platform) {
-      plt.prepareReady = function () {
-        // 1) ionic bootstrapped
-        plt.windowLoad(function () {
-          plt.triggerReady('wechat');
-        });
-      };
-    },
-    settings: {
-      jsSDKUrl: '//res.wx.qq.com/open/js/jweixin-1.0.0.js',
-      hideNavBar: true
-    },
-    isMatch(plt: Platform) {
-      return plt.isPlatformMatch('wechat', ['micromessenger']);
-    },
-    versionParser(plt: Platform) {
-      return plt.matchUserAgentVersion(/micromessenger\/(\d+).(\d+).(\d+)?/i);
-    }
-  },
-
-  'alipay': {
-    type: Type.ENVIRONMENT,
-    initialize: function (plt: Platform) {
-      plt.prepareReady = function () {
-        const jsSDKUrl = '//a.alipayobjects.com/g/h5-lib/alipayjsapi/3.0.2/alipayjsapi.min.js';
-        const jsSDKName = 'AlipayJSBridge';
-        const jsSDKEventName = 'AlipayJSBridgeReady';
-        plt.loadJsSDK({jsSDKUrl, jsSDKName, jsSDKEventName, timeout: 100}, function (successData: any) {
-          console.debug(successData);
-        }, function (erorData: any) {
-          console.debug(erorData);
-        });
-      };
-    },
-    settings: {
-      usePushWindow: false, // 页面切换使用alipay提供的 pushWindow() 方法开启新页面
-      hideNavBar: true
-    },
-    isMatch(plt: Platform) {
-      return plt.isPlatformMatch('alipay', ['alipay', 'alipayclient']);
-    },
-    versionParser(plt: Platform) {
-      return plt.matchUserAgentVersion(/alipayclient\/(\d+).(\d+).(\d+)?/i);
-    },
-  },
-
-  /**
-   * core
-   */
-  'core': {
-    type: Type.BASE,
-    settings: {
-      mode: 'md',
-      keyboardHeight: 290
-    },
-    isMatch() {
-      return true;
     }
   },
 };
