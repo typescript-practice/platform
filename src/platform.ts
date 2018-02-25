@@ -6,7 +6,6 @@ import PLATFORM_CONFIGS from './lib/platform-registry';
 import mergeConfigs from './lib/merge-configs';
 import PlatformNode from './lib/PlatformNode';
 import {
-  BackButtonAction,
   DocumentDirection,
   EventListenerOptions,
   PlatformConfig,
@@ -38,6 +37,32 @@ export {mergeConfigs, PLATFORM_CONFIGS};
  */
 export class Platform {
 
+  /** @internal */
+  Css: {
+    transform?: string;
+    transition?: string;
+    transitionDuration?: string;
+    transitionDelay?: string;
+    transitionTimingFn?: string;
+    transitionStart?: string;
+    transitionEnd?: string;
+    transformOrigin?: string;
+    animationDelay?: string;
+  };
+
+  /** @internal */
+  _platforms: string[] = [];
+  _settings: any = {};
+
+  /**
+   * Returns if this app is using right-to-left language direction or not.
+   * We recommend the app's `index.html` file already has the correct `dir`
+   * attribute value set, such as `<html dir="ltr">` or `<html dir="rtl">`.
+   * [W3C: Structural markup and right-to-left text in HTML](http://www.w3.org/International/questions/qa-html-dir)
+   * @returns {boolean}
+   */
+  isRTL: boolean;
+
   private _win: Window;
   private _doc: HTMLDocument;
   private _versions: { [name: string]: PlatformVersion } = {};
@@ -58,23 +83,6 @@ export class Platform {
   private _lH = 0;
   private _isPortrait: boolean | null = null;
   private _uiEvtOpts = false;
-
-  /** @internal */
-  Css: {
-    transform?: string;
-    transition?: string;
-    transitionDuration?: string;
-    transitionDelay?: string;
-    transitionTimingFn?: string;
-    transitionStart?: string;
-    transitionEnd?: string;
-    transformOrigin?: string;
-    animationDelay?: string;
-  };
-
-  /** @internal */
-  _platforms: string[] = [];
-  _settings: any = {};
 
   constructor(platformConfigs: PlatformConfigs) {
 
@@ -122,6 +130,7 @@ export class Platform {
 
     this.init();
   }
+
 
   // Methods
   // **********************************************
@@ -326,14 +335,6 @@ export class Platform {
     return this._dir;
   }
 
-  /**
-   * Returns if this app is using right-to-left language direction or not.
-   * We recommend the app's `index.html` file already has the correct `dir`
-   * attribute value set, such as `<html dir="ltr">` or `<html dir="rtl">`.
-   * [W3C: Structural markup and right-to-left text in HTML](http://www.w3.org/International/questions/qa-html-dir)
-   * @returns {boolean}
-   */
-  isRTL: boolean;
 
   /**
    * Set the app's language and optionally the country code, which will update
@@ -493,7 +494,7 @@ export class Platform {
 
   /**
    * Get the final configuration for the matching platform.
-   * */
+   */
   settings(): any {
     return this._settings;
   }
@@ -578,7 +579,7 @@ export class Platform {
    * @hidden
    */
   getElementFromPoint(x: number, y: number) {
-    return <HTMLElement>this._doc['elementFromPoint'](x, y);
+    return this._doc['elementFromPoint'](x, y) as HTMLElement;
   }
 
   /**
@@ -603,66 +604,6 @@ export class Platform {
     return !this.isPortrait();
   }
 
-  private _calcDim() {
-    // we're caching window dimensions so that
-    // we're not forcing many layouts
-    // if _isPortrait is null then that means
-    // the dimensions needs to be looked up again
-    // this also has to cover an edge case that only
-    // happens on iOS 10 (not other versions of iOS)
-    // where window.innerWidth is always bigger than
-    // window.innerHeight when it is first measured,
-    // even when the device is in portrait but
-    // the second time it is measured it is correct.
-    // Hopefully this check will not be needed in the future
-    if (this._isPortrait === null || this._isPortrait === false && this._win['innerWidth'] < this._win['innerHeight']) {
-      var win = this._win;
-
-      // var innerWidth = win['innerWidth'];
-      var innerWidth = win.screen.width;
-      // var innerHeight = win['innerHeight'];
-      var innerHeight = win.screen.height;
-
-      // we're keeping track of portrait and landscape dimensions
-      // separately because the virtual keyboard can really mess
-      // up accurate values when the keyboard is up
-      if (win.screen.width > 0 && win.screen.height > 0) {
-        if (innerWidth < innerHeight) {
-
-          // the device is in portrait
-          // we have to do fancier checking here
-          // because of the virtual keyboard resizing
-          // the window
-          if (this._pW <= innerWidth) {
-            console.debug('setting _isPortrait to true');
-            this._isPortrait = true;
-            this._pW = innerWidth;
-          }
-
-          if (this._pH <= innerHeight) {
-            console.debug('setting _isPortrait to true');
-            this._isPortrait = true;
-            this._pH = innerHeight;
-          }
-
-        } else {
-          // the device is in landscape
-          if (this._lW !== innerWidth) {
-            console.debug('setting _isPortrait to false');
-            this._isPortrait = false;
-            this._lW = innerWidth;
-          }
-
-          if (this._lH !== innerHeight) {
-            console.debug('setting _isPortrait to false');
-            this._isPortrait = false;
-            this._lH = innerHeight;
-          }
-        }
-
-      }
-    }
-  }
 
   /**
    * @hidden
@@ -714,8 +655,8 @@ export class Platform {
     }
 
     if (el) {
-      this.registerListener(el, 'webkitTransitionEnd', <any>onTransitionEnd, {}, unRegs);
-      this.registerListener(el, 'transitionend', <any>onTransitionEnd, {}, unRegs);
+      this.registerListener(el, 'webkitTransitionEnd', onTransitionEnd as any, {}, unRegs);
+      this.registerListener(el, 'transitionend', onTransitionEnd as any, {}, unRegs);
     }
 
     return unregister;
@@ -779,37 +720,6 @@ export class Platform {
   //   activeElement && activeElement.blur && activeElement.blur();
   // }
 
-  private _initEvents() {
-    // Test via a getter in the options object to see if the passive property is accessed
-    const NOOP = function () {
-    };
-    try {
-      var opts = Object.defineProperty({}, 'passive', {
-        get: () => {
-          this._uiEvtOpts = true;
-        }
-      });
-      this._win.addEventListener('optsTest', NOOP, opts);
-    } catch (e) {
-    }
-
-    // add the window resize event listener XXms after
-    window.setTimeout(() => {
-      var timerId: number;
-      this.registerListener(this._win, 'resize', () => {
-        window.clearTimeout(timerId);
-        timerId = window.setTimeout(() => {
-          // setting _isPortrait to null means the
-          // dimensions will need to be looked up again
-          // if (this.hasFocusedTextInput() === false) {
-          this._isPortrait = null;
-          // }
-          // TODO: resize
-          // this.resize.emit();
-        }, 200);
-      }, {passive: true});
-    }, 2000);
-  }
 
 
   // Platform Registry
@@ -890,17 +800,17 @@ export class Platform {
    */
   isPlatformMatch(queryStringName: string, userAgentAtLeastHas?: string[], userAgentMustNotHave: string[] = []): boolean {
     const queryValue = this.getQueryParam('platform');
-    console.log(queryStringName)
-    console.log(queryValue)
+    console.log(queryStringName);
+    console.log(queryValue);
     if (queryValue) {
       return this.testQuery(queryValue, queryStringName);
     }
 
     userAgentAtLeastHas = userAgentAtLeastHas || [queryStringName];
 
-    for (var i = 0; i < userAgentAtLeastHas.length; i++) {
+    for (let i = 0; i < userAgentAtLeastHas.length; i++) {
       if (this.testUserAgent(userAgentAtLeastHas[i])) {
-        for (var j = 0; j < userAgentMustNotHave.length; j++) {
+        for (let j = 0; j < userAgentMustNotHave.length; j++) {
           if (this.testUserAgent(userAgentMustNotHave[j])) {
             return false;
           }
@@ -986,7 +896,7 @@ export class Platform {
     // 1. resize event init
     this._initEvents();
 
-    var _platforms: { [key: string]: PlatformNode } = {};
+    let _platforms: { [key: string]: PlatformNode } = {};
 
     for (let name in this._registry) {
       let _tmp: PlatformNode = new PlatformNode(this._registry, name);
@@ -995,7 +905,7 @@ export class Platform {
         console.warn('Each platform environment needs to pass in the specified "type" attribute');
       }
 
-      if (!!_platforms[_tmp.type]) continue;
+      if (_platforms[_tmp.type]) continue;
 
       if (_tmp.isMatch(this)) {
         _platforms[_tmp.type] = _tmp;
@@ -1028,6 +938,102 @@ export class Platform {
 
     // 6. prepareReady
     this.prepareReady();
+  }
+
+
+  private _initEvents() {
+    // Test via a getter in the options object to see if the passive property is accessed
+    const NOOP = function () {
+      // empty
+    };
+    try {
+      let opts = Object.defineProperty({}, 'passive', {
+        get: () => {
+          this._uiEvtOpts = true;
+        }
+      });
+      this._win.addEventListener('optsTest', NOOP, opts);
+    } catch (e) {
+      // empty
+    }
+
+    // add the window resize event listener XXms after
+    window.setTimeout(() => {
+      let timerId: number;
+      this.registerListener(this._win, 'resize', () => {
+        window.clearTimeout(timerId);
+        timerId = window.setTimeout(() => {
+          // setting _isPortrait to null means the
+          // dimensions will need to be looked up again
+          // if (this.hasFocusedTextInput() === false) {
+          this._isPortrait = null;
+          // }
+          // TODO: resize
+          // this.resize.emit();
+        }, 200);
+      }, {passive: true});
+    }, 2000);
+  }
+
+  private _calcDim() {
+    // we're caching window dimensions so that
+    // we're not forcing many layouts
+    // if _isPortrait is null then that means
+    // the dimensions needs to be looked up again
+    // this also has to cover an edge case that only
+    // happens on iOS 10 (not other versions of iOS)
+    // where window.innerWidth is always bigger than
+    // window.innerHeight when it is first measured,
+    // even when the device is in portrait but
+    // the second time it is measured it is correct.
+    // Hopefully this check will not be needed in the future
+    if (this._isPortrait === null || this._isPortrait === false && this._win['innerWidth'] < this._win['innerHeight']) {
+      let win = this._win;
+
+      // let innerWidth = win['innerWidth'];
+      let innerWidth = win.screen.width;
+      // let innerHeight = win['innerHeight'];
+      let innerHeight = win.screen.height;
+
+      // we're keeping track of portrait and landscape dimensions
+      // separately because the virtual keyboard can really mess
+      // up accurate values when the keyboard is up
+      if (win.screen.width > 0 && win.screen.height > 0) {
+        if (innerWidth < innerHeight) {
+
+          // the device is in portrait
+          // we have to do fancier checking here
+          // because of the virtual keyboard resizing
+          // the window
+          if (this._pW <= innerWidth) {
+            console.debug('setting _isPortrait to true');
+            this._isPortrait = true;
+            this._pW = innerWidth;
+          }
+
+          if (this._pH <= innerHeight) {
+            console.debug('setting _isPortrait to true');
+            this._isPortrait = true;
+            this._pH = innerHeight;
+          }
+
+        } else {
+          // the device is in landscape
+          if (this._lW !== innerWidth) {
+            console.debug('setting _isPortrait to false');
+            this._isPortrait = false;
+            this._lW = innerWidth;
+          }
+
+          if (this._lH !== innerHeight) {
+            console.debug('setting _isPortrait to false');
+            this._isPortrait = false;
+            this._lH = innerHeight;
+          }
+        }
+
+      }
+    }
   }
 }
 

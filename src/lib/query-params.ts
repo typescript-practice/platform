@@ -8,12 +8,12 @@ export default class QueryParams {
 
   parseUrl(url: string) {
     if (url) {
-      var startIndex = url.indexOf('?');
+      let startIndex = url.indexOf('?');
       if (startIndex > -1) {
-        var queries = url.slice(startIndex + 1).split('&');
-        for (var i = 0; i < queries.length; i++) {
+        let queries = url.slice(startIndex + 1).split('&');
+        for (let i = 0; i < queries.length; i++) {
           if (queries[i].indexOf('=') > 0) {
-            var split = queries[i].split('=');
+            let split = queries[i].split('=');
             if (split.length > 1) {
               this.data[split[0]] = split[1].split('#')[0];
             }

@@ -6,10 +6,11 @@ import assign from 'lodash/assign';
  * @hidden
  */
 export default class PlatformNode {
-  private c: PlatformConfig;
 
   name: string = '';
   type: Type = 0;
+
+  private c: PlatformConfig;
 
   constructor(registry: { [name: string]: PlatformConfig }, platformName: string) {
     this.c = registry[platformName];

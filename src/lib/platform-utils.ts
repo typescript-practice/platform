@@ -62,7 +62,7 @@ export function isSafari(plt: Platform): boolean {
 }
 
 export function isWKWebView(plt: Platform): boolean {
-  return isIos(plt) && !!(<any>plt.win())['webkit'];
+  return isIos(plt) && !!(plt.win() as any)['webkit'];
 }
 
 export function isIosUIWebView(plt: Platform): boolean {
