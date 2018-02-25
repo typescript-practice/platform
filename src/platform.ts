@@ -49,7 +49,7 @@ export class Platform {
   private _readyPromise: Promise<any>;
   private _readyResolve: any;
   private _readyReject: any;
-  private _bbActions: BackButtonAction[] = [];
+  // private _bbActions: BackButtonAction[] = [];
   private _registry: { [name: string]: PlatformConfig } = {};
   private _core: string = '';
   private _pW = 0;
@@ -406,51 +406,51 @@ export class Platform {
 
   // resize: EventEmitter<Event> = new EventEmitter<Event>();
 
-  /**
-   * The back button event is triggered when the user presses the native
-   * platform's back button, also referred to as the "hardware" back button.
-   * This event is only used within Cordova apps running on Android and
-   * Windows platforms. This event is not fired on iOS since iOS doesn't come
-   * with a hardware back button in the same sense an Android or Windows device
-   * does.
-   *
-   * Registering a hardware back button action and setting a priority allows
-   * apps to control which action should be called when the hardware back
-   * button is pressed. This method decides which of the registered back button
-   * actions has the highest priority and should be called.
-   *
-   * @param {Function} fn Called when the back button is pressed,
-   * if this registered action has the highest priority.
-   * @param {number} priority Set the priority for this action. Only the highest priority will execute. Defaults to `0`.
-   * @returns {Function} A function that, when called, will unregister
-   * the back button action.
-   */
-  registerBackButtonAction(fn: Function, priority: number = 0): Function {
-    const action: BackButtonAction = {fn, priority};
+  // /**
+  //  * The back button event is triggered when the user presses the native
+  //  * platform's back button, also referred to as the "hardware" back button.
+  //  * This event is only used within Cordova apps running on Android and
+  //  * Windows platforms. This event is not fired on iOS since iOS doesn't come
+  //  * with a hardware back button in the same sense an Android or Windows device
+  //  * does.
+  //  *
+  //  * Registering a hardware back button action and setting a priority allows
+  //  * apps to control which action should be called when the hardware back
+  //  * button is pressed. This method decides which of the registered back button
+  //  * actions has the highest priority and should be called.
+  //  *
+  //  * @param {Function} fn Called when the back button is pressed,
+  //  * if this registered action has the highest priority.
+  //  * @param {number} priority Set the priority for this action. Only the highest priority will execute. Defaults to `0`.
+  //  * @returns {Function} A function that, when called, will unregister
+  //  * the back button action.
+  //  */
+  // registerBackButtonAction(fn: Function, priority: number = 0): Function {
+  //   const action: BackButtonAction = {fn, priority};
+  //
+  //   this._bbActions.push(action);
+  //
+  //   // return a function to unregister this back button action
+  //   return () => {
+  //     // removeArrayItem(this._bbActions, action);
+  //   };
+  // }
 
-    this._bbActions.push(action);
-
-    // return a function to unregister this back button action
-    return () => {
-      // removeArrayItem(this._bbActions, action);
-    };
-  }
-
-  /**
-   * @hidden
-   */
-  runBackButtonAction() {
-    // decide which one back button action should run
-    let winner: any;
-    this._bbActions.forEach((action: BackButtonAction) => {
-      if (!winner || action.priority >= winner.priority) {
-        winner = action;
-      }
-    });
-
-    // run the winning action if there is one
-    winner && winner.fn && winner.fn();
-  }
+  // /**
+  //  * @hidden
+  //  */
+  // runBackButtonAction() {
+  //   // decide which one back button action should run
+  //   let winner: any;
+  //   this._bbActions.forEach((action: BackButtonAction) => {
+  //     if (!winner || action.priority >= winner.priority) {
+  //       winner = action;
+  //     }
+  //   });
+  //
+  //   // run the winning action if there is one
+  //   winner && winner.fn && winner.fn();
+  // }
 
 
   // Getter/Setter Methods

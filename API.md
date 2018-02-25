@@ -14,7 +14,6 @@
 - [dir(): DocumentDirection](#dir-documentdirection)
 - [setLang(language: string, updateDocument: boolean)](#setlanglanguage-string-updatedocument-boolean)
 - [lang(): string](#lang-string)
-- [registerBackButtonAction(fn: Function, priority: number = 0): Function](#registerbackbuttonactionfn-function-priority-number--0-function)
 - [getQueryParam(key: string)](#getqueryparamkey-string)
 - [url(): string](#url-string)
 - [width(): number](#width-number)
@@ -393,30 +392,6 @@ attribute value set, such as `<html lang="en">`.
 [W3C: Declaring language in HTML](http://www.w3.org/International/questions/qa-html-language-declarations)
 
 * `@returns {string}`
-
-
-
-## registerBackButtonAction(fn: Function, priority: number = 0): Function
-
-
-The back button event is triggered when the user presses the native
-platform's back button, also referred to as the "hardware" back button.
-This event is only used within Cordova apps running on Android and
-Windows platforms. This event is not fired on iOS since iOS doesn't come
-with a hardware back button in the same sense an Android or Windows device
-does.
-
-Registering a hardware back button action and setting a priority allows
-apps to control which action should be called when the hardware back
-button is pressed. This method decides which of the registered back button
-actions has the highest priority and should be called.
-
-* `@param {Function}` fn Called when the back button is pressed,
-if this registered action has the highest priority.
-* `@param {number}` priority Set the priority for this action. Only the highest priority will execute. Defaults to `0`.
-* `@returns {Function}` A function that, when called, will unregister
-the back button action.
-
 
 
 ## getQueryParam(key: string)
