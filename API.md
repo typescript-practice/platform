@@ -1,4 +1,4 @@
-# `Platform` API
+# Platform API
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -16,7 +16,7 @@
 - [lang(): string](#lang-string)
 - [registerBackButtonAction(fn: Function, priority: number = 0): Function](#registerbackbuttonactionfn-function-priority-number--0-function)
 - [getQueryParam(key: string)](#getqueryparamkey-string)
-- [url()](#url)
+- [url(): string](#url-string)
 - [width(): number](#width-number)
 - [height(): number](#height-number)
 - [isPortrait(): boolean | null](#isportrait-boolean--null)
@@ -426,7 +426,7 @@ Get the query string parameter in url.
 * `@param {string}` key - keyName
 
 
-## url()
+## url(): string
 
 Get the current url.
 
@@ -478,6 +478,9 @@ value is `dom`.
 
 Check if the current window.navigator.platform parameter matches the specified regular parameter.
 
+```js
+plt.testNavigatorPlatform('win|mac|x11|linux'); // match desktop
+```
 
 ### matchUserAgentVersion(userAgentExpression: RegExp): any
 
@@ -496,6 +499,10 @@ plt.matchUserAgentVersion(/dingtalk\/(\d+).(\d+).(\d+)?/i);
 Test if the incoming string matches userAgent.
 
 
+```js
+plt.testUserAgent('iphone'); // true or false
+```
+
 ### isPlatformMatch(queryStringName: string, userAgentAtLeastHas?: string[], userAgentMustNotHave: string[] = []): boolean
 
 When writing a platform configuration using this method, the address bar parameters will affect the results of the final `plt.platforms ()` method, such as [Example](#Example) mentioned above.
@@ -509,9 +516,32 @@ http://xxx/xx/?platform=core;mobile;ios;wechat
 The `plt.platforms()` will returns```["core", "mobile", "ios", "wechat"]```. Including the corresponding `plt.settings ()`, this technique can be used to simulate on other platforms.
 
 
+**Example here:**
+
+
+```js
+plt.isPlatformMatch('alipay', ['alipay', 'alipayclient']);
+plt.isPlatformMatch('wechat', ['micromessenger']);
+```
+
 ### loadScript(url: string, cb: Function)
 
 Methods to load external js files.
+
+```js
+const jsSDKUrl = '//g.alicdn.com/dingding/open-develop/1.6.9/dingtalk.js';
+plt.loadScript(jsSDKUrl, function () {
+  window.dd.ready(function () {
+    plt.triggerReady('dingtalk');
+    timer && window.clearTimeout(timer)
+  });
+
+  window.dd.error(function (err) {
+    plt.triggerFail('dingtalk dd.error');
+    timer && window.clearTimeout(timer)
+  })
+})
+```
 
 
 ### loadJsSDK(sdkInfo: [SDKInfo](https://github.com/typescript-practice/platform/blob/master/src/lib/interface.ts#L34), successCallback: Function, errorCallback: Function): void {
@@ -525,3 +555,23 @@ Methods to load JSSDK, including successful or failed callbacks.
 * `@param {number}` [sdkInfo.timeout=10000] - timeout
 * `@param {Function}` successCallback
 * `@param {Function}` errorCallback
+
+
+```js
+const jsSDKUrl = '//a.alipayobjects.com/g/h5-lib/alipayjsapi/3.0.2/alipayjsapi.min.js';
+const jsSDKName = 'AlipayJSBridge';
+const jsSDKEventName = 'AlipayJSBridgeReady';
+// check and load js sdk
+plt.loadJsSDK({
+  jsSDKUrl: jsSDKUrl,
+  jsSDKName: jsSDKName,
+  jsSDKEventName: jsSDKEventName,
+  timeout: 100
+}, function (successData) {
+  console.debug(successData);
+  plt.triggerReady('alipay'); // to plt.ready()
+}, function (errorData) {
+  console.debug(errorData);
+  plt.triggerFail('alipay'); // to plt.ready()
+});
+```
