@@ -1,25 +1,29 @@
 'use strict';
 
 import {getCss, isTextInput} from './lib/dom';
-import {QueryParams} from './lib/query-params';
-import {PLATFORM_CONFIGS} from './lib/platform-registry';
+import QueryParams from './lib/query-params';
+import PLATFORM_CONFIGS from './lib/platform-registry';
+import mergeConfigs from './lib/merge-configs';
+import PlatformNode from './lib/PlatformNode';
 import {
   BackButtonAction,
   DocumentDirection,
   EventListenerOptions,
   PlatformConfig,
+  PlatformConfigs,
   PlatformVersion,
   SDKInfo,
-  Type,
 } from './lib/interface';
+
+export {mergeConfigs, PLATFORM_CONFIGS};
 
 /**
  * @name Platform
  * @description
  * The Platform service can be used to get information about your current device.
  * You can get all of the platforms associated with the device using the [platforms](#platforms)
- * method, including whether the app is being viewed from a tablet, if it's
- * on a mobile device or browser, and the exact platform (iOS, Android, etc).
+ * method, including whether the app is being viewed from a mobile/tablet/desktop, if it's
+ * on a mobile device or browser, and the exact System (iOS, Android, Windows etc).
  * You can also get the orientation of the device, if it uses right-to-left
  * language direction, and much much more. With this information you can completely
  * customize your app to fit any device.
@@ -72,7 +76,7 @@ export class Platform {
   _platforms: string[] = [];
   _settings: any = {};
 
-  constructor(platformConfigs: { [key: string]: PlatformConfig }) {
+  constructor(platformConfigs: PlatformConfigs) {
 
     const doc = document;
     const win = doc.defaultView; // read-only
@@ -119,46 +123,6 @@ export class Platform {
     this.init();
   }
 
-  /**
-   * @hidden
-   */
-  setWindow(win: Window) {
-    this._win = win;
-  }
-
-  /**
-   * @hidden
-   */
-  win() {
-    return this._win;
-  }
-
-  /**
-   * @hidden
-   */
-  setDocument(doc: HTMLDocument) {
-    this._doc = doc;
-  }
-
-  /**
-   * @hidden
-   */
-  doc() {
-    return this._doc;
-  }
-
-  /**
-   * @hidden
-   */
-  setCssProps(docElement: HTMLElement) {
-    this.Css = getCss(docElement);
-  }
-
-  settings(): any {
-    return this._settings;
-  }
-
-
   // Methods
   // **********************************************
 
@@ -171,33 +135,31 @@ export class Platform {
    * an iPad would return `true` for the platform names: `mobile`,
    * `ios`, `ipad`, and `tablet`. Additionally, if the app was running
    * from Cordova then `cordova` would be true, and if it was running
-   * from a web browser on the iPad then `mobileweb` would be `true`.
+   * from a web browser on the iPad then `web` would be `true`.
    *
    * ```
-   * import { Platform } from 'ionic-angular';
+   * import { setupPlatform } from 'tp-platform';
    *
-   * @Component({...})
-   * export MyPage {
-   *   constructor(public platform: Platform) {
-   *     if (this.platform.is('ios')) {
-   *       // This will only print when on iOS
-   *       console.log('I am an iOS device!');
-   *     }
-   *   }
-   * }
+   * const plt = setupPlatform({});
+   * plt.is('ios');  // true or false
    * ```
    *
-   * | Platform Name   | Description                        |
-   * |-----------------|------------------------------------|
-   * | android         | on a device running Android.       |
-   * | cordova         | on a device running Cordova.       |
-   * | core            | on a desktop device.               |
-   * | ios             | on a device running iOS.           |
-   * | ipad            | on an iPad device.                 |
-   * | iphone          | on an iPhone device.               |
-   * | mobile          | on a mobile device.                |
-   * | tablet          | on a tablet device.                |
-   * | windows         | on a device running Windows.       |
+   * | Type  | Type Name   | Platform Name   | Description                        |
+   * |-------|-------------|-----------------|------------------------------------|
+   * | 0     | Base        | core            | base application.                  |
+   * | 1     | Platform    | mobile          | on a mobile platform.              |
+   * | 1     | Platform    | tablet          | on a tablet platform.              |
+   * | 1     | Platform    | desktop         | on a desktop platform.             |
+   * | 2     | System      | android         | on a device running Android System.|
+   * | 2     | System      | ios             | on a device running iOS System.    |
+   * | 2     | System      | linux           | on a device running Linux System.  |
+   * | 2     | System      | windows         | on a device running Windows System.|
+   * | 2     | System      | mac             | on a device running Mac OS.        |
+   * | 3     | Brand       | ipad            | on an iPad device.                 |
+   * | 3     | Brand       | iphone          | on an iPhone device.               |
+   * | 4     | Environment | cordova         | on a hybrid environment(cordova).  |
+   * | 4     | Environment | electron        | on a hybrid environment(electron). |
+   * | 4     | Environment | web             | on an ordinary web browser.        |
    *
    * @param {string} platformName
    */
@@ -209,19 +171,14 @@ export class Platform {
    * @returns {array} the array of platforms
    * @description
    * Depending on what device you are on, `platforms` can return multiple values.
-   * Each possible value is a hierarchy of platforms. For example, on an iPhone,
-   * it would return `mobile`, `ios`, and `iphone`.
+   * Each possible value is a type of platforms. For example, on an iPhone,
+   * it would return `core`, `mobile`, `ios`, and `iphone`.
    *
    * ```
-   * import { Platform } from 'ionic-angular';
+   * import { setupPlatform } from 'tp-platform';
    *
-   * @Component({...})
-   * export MyPage {
-   *   constructor(public platform: Platform) {
-   *     // This will print an array of the current platforms
-   *     console.log(this.platform.platforms());
-   *   }
-   * }
+   * const plt = setupPlatform({});
+   * plt.platforms();  // ['core', 'mobile', 'ios', 'iphone'].
    * ```
    */
   platforms(): Array<string> {
@@ -230,21 +187,14 @@ export class Platform {
     return this._platforms;
   }
 
-
   /**
    * Returns an object containing version information about all of the platforms.
    *
    * ```
-   * import { Platform } from 'ionic-angular';
+   * import { setupPlatform } from 'tp-platform';
    *
-   * @Component({...})
-   * export MyPage {
-   *   constructor(public platform: Platform) {
-   *     // This will print an object containing
-   *     // all of the platforms and their versions
-   *     console.log(platform.versions());
-   *   }
-   * }
+   * const plt = setupPlatform({});
+   * plt.versions();  // {ios: {str: "10.3.0", num: 10.3, major: 10, minor: 3, patch: 0}}.
    * ```
    *
    * @returns {object} An object containing all of the platforms and their versions.
@@ -254,24 +204,13 @@ export class Platform {
     return this._versions;
   }
 
-  // /**
-  //  * @hidden
-  //  */
-  // version(): PlatformVersion {
-  //   for (var platformName in this._versions) {
-  //     if (this._versions[platformName]) {
-  //       return this._versions[platformName];
-  //     }
-  //   }
-  //   return {};
-  // }
-
   /**
    * Returns a promise when the platform is ready and native functionality
    * can be called. If the app is running from within a web browser, then
    * the promise will resolve when the DOM is ready. When the app is running
-   * from an application engine such as Cordova, then the promise will
-   * resolve when Cordova triggers the `deviceready` event.
+   * from an hybrid application such as Cordova/Electron/Weichat/Alipay,
+   * then the promise will resolve when hybrid application execute the
+   * `triggerReady` function.
    *
    * The resolved value is the `readySource`, which states which platform
    * ready was used. For example, when Cordova is ready, the resolved ready
@@ -281,18 +220,35 @@ export class Platform {
    * the status bar plugin, so the web should not run status bar plugin logic.
    *
    * ```
-   * import { Component } from '@angular/core';
-   * import { Platform } from 'ionic-angular';
+   * import { setupPlatform } from 'tp-platform';
    *
-   * @Component({...})
-   * export MyApp {
-   *   constructor(public platform: Platform) {
-   *     this.platform.ready().then((readySource) => {
-   *       console.log('Platform ready from', readySource);
-   *       // Platform now ready, execute any required native code
-   *     });
-   *   }
-   * }
+   * const plt = setupPlatform({});
+   * plt.ready().then(function (readySource) {
+   *    switch (readySource) {
+   *      case 'dom':
+   *        console.log('web env');
+   *        break;
+   *      case 'cordova':
+   *        console.log('cordova env');
+   *        break;
+   *      case 'electron':
+   *        console.log('electron env');
+   *        break;
+   *      case 'alipay':
+   *        console.log('alipay env');
+   *        break;
+   *      case 'dingtalk':
+   *        console.log('dingtalk env');
+   *        break;
+   *      case 'wechat':
+   *        console.log('wechat env');
+   *        break;
+   *      default:
+   *        console.log(readySource + ' not found!');
+   *    }
+   * }, function (reason) {
+   *   console.error('ready error', reason)
+   * });
    * ```
    * @returns {promise}
    */
@@ -310,13 +266,13 @@ export class Platform {
     this._readyResolve(readySource);
   }
 
-  triggerFail(readySource: string) {
-    this._readyReject(readySource);
+  triggerFail(reason: string) {
+    this._readyReject(reason);
   }
 
   /**
    * @hidden
-   * This is the default prepareReady if it's not replaced by an engine,
+   * This is the default prepareReady if it's not replaced by an hybrid app,
    * such as Cordova or Electron. If there was no custom prepareReady
    * method from an engine then it uses the method below, which triggers
    * the platform ready on the DOM ready event, and the default resolved
@@ -412,41 +368,41 @@ export class Platform {
   // Provided NOOP methods so they do not error when
   // called by engines (the browser)that do not provide them
 
-  /**
-   * @hidden
-   */
-  exitApp() {
-  }
+  // /**
+  //  * @hidden
+  //  */
+  // exitApp() {
+  // }
 
   // Events meant to be triggered by the engine
   // **********************************************
 
   // TODO: Provide || Write EventEmitter Lib
-  /**
-   * @hidden
-   */
+  // /**
+  //  * @hidden
+  //  */
   // backButton: EventEmitter<Event> = new EventEmitter<Event>();
 
-  /**
-   * The pause event emits when the native platform puts the application
-   * into the background, typically when the user switches to a different
-   * application. This event would emit when a Cordova app is put into
-   * the background, however, it would not fire on a standard web browser.
-   */
+  // /**
+  //  * The pause event emits when the native platform puts the application
+  //  * into the background, typically when the user switches to a different
+  //  * application. This event would emit when a Cordova app is put into
+  //  * the background, however, it would not fire on a standard web browser.
+  //  */
   // pause: EventEmitter<Event> = new EventEmitter<Event>();
 
-  /**
-   * The resume event emits when the native platform pulls the application
-   * out from the background. This event would emit when a Cordova app comes
-   * out from the background, however, it would not fire on a standard web browser.
-   */
+  // /**
+  //  * The resume event emits when the native platform pulls the application
+  //  * out from the background. This event would emit when a Cordova app comes
+  //  * out from the background, however, it would not fire on a standard web browser.
+  //  */
   // resume: EventEmitter<Event> = new EventEmitter<Event>();
 
-  /**
-   * The resize event emits when the browser window has changed dimensions. This
-   * could be from a browser window being physically resized, or from a device
-   * changing orientation.
-   */
+  // /**
+  //  * The resize event emits when the browser window has changed dimensions. This
+  //  * could be from a browser window being physically resized, or from a device
+  //  * changing orientation.
+  //  */
 
   // resize: EventEmitter<Event> = new EventEmitter<Event>();
 
@@ -503,6 +459,55 @@ export class Platform {
   /**
    * @hidden
    */
+  win() {
+    return this._win;
+  }
+
+  /**
+   * @hidden
+   */
+  setWindow(win: Window) {
+    this._win = win;
+  }
+
+  /**
+   * @hidden
+   */
+  doc() {
+    return this._doc;
+  }
+
+  /**
+   * @hidden
+   */
+  setDocument(doc: HTMLDocument) {
+    this._doc = doc;
+  }
+
+  /**
+   * @hidden
+   */
+  setCssProps(docElement: HTMLElement) {
+    this.Css = getCss(docElement);
+  }
+
+  /**
+   * @hidden
+   */
+  settings(): any {
+    return this._settings;
+  }
+
+  /**
+   * @hidden
+   */
+  userAgent(): string {
+    return this._ua || '';
+  }
+
+  /**
+   * @hidden
+   */
   setUserAgent(userAgent: string) {
     this._ua = userAgent;
   }
@@ -531,8 +536,8 @@ export class Platform {
   /**
    * @hidden
    */
-  userAgent(): string {
-    return this._ua || '';
+  navigatorPlatform(): string {
+    return this._nPlt || '';
   }
 
   /**
@@ -540,13 +545,6 @@ export class Platform {
    */
   setNavigatorPlatform(navigatorPlt: string) {
     this._nPlt = navigatorPlt;
-  }
-
-  /**
-   * @hidden
-   */
-  navigatorPlatform(): string {
-    return this._nPlt || '';
   }
 
   /**
@@ -820,7 +818,7 @@ export class Platform {
   /**
    * @hidden
    */
-  setPlatformConfigs(platformConfigs: { [key: string]: PlatformConfig }) {
+  setPlatformConfigs(platformConfigs: PlatformConfigs) {
     this._registry = platformConfigs || {};
   }
 
@@ -881,7 +879,8 @@ export class Platform {
 
   testUserAgent(expression: string): boolean {
     if (this._ua) {
-      return this._ua.indexOf(expression) >= 0;
+      const rgx = new RegExp(expression, 'i');
+      return rgx.test(this._ua);
     }
     return false;
   }
@@ -889,19 +888,18 @@ export class Platform {
   /**
    * @hidden
    */
-  isPlatformMatch(queryStringName: string, userAgentAtLeastHas?: (string | RegExp)[], userAgentMustNotHave: string[] = []): boolean {
-    const queryValue = this._qp.get('platform');
+  isPlatformMatch(queryStringName: string, userAgentAtLeastHas?: string[], userAgentMustNotHave: string[] = []): boolean {
+    const queryValue = this.getQueryParam('platform');
     if (queryValue) {
       return this.testQuery(queryValue, queryStringName);
     }
 
     userAgentAtLeastHas = userAgentAtLeastHas || [queryStringName];
 
-    const userAgent = this._ua.toLowerCase();
     for (var i = 0; i < userAgentAtLeastHas.length; i++) {
-      if (!!userAgent.match(userAgentAtLeastHas[i])) {
+      if (this.testUserAgent(userAgentAtLeastHas[i])) {
         for (var j = 0; j < userAgentMustNotHave.length; j++) {
-          if (!!userAgent.match(userAgentMustNotHave[j])) {
+          if (this.testUserAgent(userAgentMustNotHave[j])) {
             return false;
           }
         }
@@ -916,12 +914,14 @@ export class Platform {
    * @hidden
    */
   loadScript(url: string, cb: Function) {
-    let _head: HTMLHeadElement = document.getElementsByTagName('head')[0];
-    let _script: HTMLScriptElement = document.createElement('script');
+    const _head: HTMLHeadElement = document.getElementsByTagName('head')[0];
+    const _script: HTMLScriptElement = document.createElement('script');
+    const startTime = new Date().getTime();
     _script.setAttribute('type', 'text/javascript');
     _script.setAttribute('src', url);
     _head.appendChild(_script);
     _script.onload = function () {
+      console.debug(`Script "${url}" loaded in ${new Date().getTime() - startTime}ms!`);
       /* istanbul ignore next */
       cb && cb.call(null);
     };
@@ -932,7 +932,6 @@ export class Platform {
    */
   loadJsSDK(sdkInfo: SDKInfo, successCallback: Function, errorCallback: Function): void {
     const {jsSDKUrl, jsSDKName, jsSDKEventName, timeout = 10000} = sdkInfo;
-    let startTime = new Date().getTime();
 
     if (!jsSDKName) {
       errorCallback(`Please input the name of JSSDK!`);
@@ -963,7 +962,7 @@ export class Platform {
             document.removeEventListener(jsSDKEventName, beforeBridgeReady);
           }
 
-          successCallback(`JSSDK ${jsSDKName} loaded by JsSDKLoader in ${new Date().getTime() - startTime}ms!`);
+          successCallback(`JSSDK ${jsSDKName} loaded by JsSDKLoader!`);
           timer && window.clearTimeout(timer);
         }
 
@@ -978,7 +977,9 @@ export class Platform {
     }
   }
 
-  /** @hidden */
+  /**
+   * @hidden
+   */
   init() {
     // 1. resize event init
     this._initEvents();
@@ -988,7 +989,7 @@ export class Platform {
     for (let name in this._registry) {
       let _tmp: PlatformNode = new PlatformNode(this._registry, name);
 
-      if (_tmp.type !== undefined) {
+      if (_tmp.type === undefined) {
         console.warn('Each platform environment needs to pass in the specified "type" attribute');
       }
 
@@ -1018,104 +1019,25 @@ export class Platform {
       _tmp.initialize(this);
     }
 
+    // when normal web
+    if (Object.keys(_platforms).indexOf('4') === -1) {
+      this._platforms.push('web');
+    }
+
     // 6. prepareReady
     this.prepareReady();
   }
 }
 
 /**
- * @hidden
+ * @name setupPlatform
+ * @description
+ * Setup platform with default platform configs.
+ *
+ * @param {PlatformConfigs} platformConfigs
+ * @return {Platform}
  */
-class PlatformNode {
-  private c: PlatformConfig;
-
-  name: string = '';
-  type: Type = 0;
-
-  constructor(registry: { [name: string]: PlatformConfig }, platformName: string) {
-    this.c = registry[platformName];
-    this.name = platformName;
-    this.type = this.c.type;
-  }
-
-  reduceSettings(totalSettings: any): any {
-    return Object.assign(totalSettings, this.settings());
-  }
-
-  settings() {
-    return this.c.settings || {};
-  }
-
-  isMatch(p: Platform): boolean {
-    return this.c.isMatch && this.c.isMatch(p) || false;
-  }
-
-  initialize(plt: Platform) {
-    this.c.initialize && this.c.initialize(plt);
-  }
-
-  version(plt: Platform): PlatformVersion | null {
-    if (this.c.versionParser) {
-      const v = this.c.versionParser(plt);
-      if (v) {
-        if (!v.major) v.major = '0';
-        if (!v.minor) v.minor = '0';
-        if (!v.patch) v.patch = '0';
-        const str = v.major + '.' + v.minor + (v.patch ? '.' + v.patch : '');
-        return {
-          str: str,
-          num: parseFloat(str),
-          major: parseInt(v.major, 10),
-          minor: parseInt(v.minor, 10),
-          patch: parseInt(v.patch, 10),
-        };
-      }
-    }
-    return null;
-  }
-}
-
-/**
- * Merge Parameters
- * 1. 先进行参数合并, 自定义参数优先级高于默认配置, 比如: core中的配置, 自定义优先级高于默认
- * 2. 之后进行平台匹配, 匹配到的 platforms 越后面的平台参数优先级越高, 比如: core < mobile < ios < iphone < cordova
- * @hidden
- */
-function mergeConfigs(defaultConfigs: any, customerConfig: any) {
-  let _finalConf = defaultConfigs;
-
-  const isObject = (val: any) => typeof val === 'object';
-  const isPlainObject = (val: any) => isObject(val) && Object.getPrototypeOf(val) === Object.prototype;
-
-  for (let outerKey in customerConfig) {
-    if (_finalConf[outerKey] && isObject(_finalConf[outerKey])) {
-      let _cusConf: any = customerConfig[outerKey];
-      let _defConf: any = _finalConf[outerKey];
-      for (let innerKey in _cusConf) {
-        if (isPlainObject(_cusConf[innerKey]) && isPlainObject(_defConf[innerKey])) {
-          Object.assign(_defConf[innerKey], _cusConf[innerKey]);
-        } else {
-          _defConf[innerKey] = _cusConf[innerKey];
-        }
-      }
-    } else {
-      _finalConf[outerKey] = customerConfig[outerKey];
-    }
-  }
-
-  return _finalConf;
-}
-
-/**
- * @hidden
- */
-export function setupPlatform(platformConfigs: { [key: string]: PlatformConfig }): Platform {
-  let _finalConf = mergeConfigs(PLATFORM_CONFIGS, platformConfigs);
-
-  console.log('_finalConf');
-  console.log(_finalConf);
-
-  const plt = new Platform(_finalConf);
-
-  return plt;
+export function setupPlatform(platformConfigs: PlatformConfigs): Platform {
+  const _finalConf = mergeConfigs(PLATFORM_CONFIGS, platformConfigs);
+  return new Platform(_finalConf);
 }

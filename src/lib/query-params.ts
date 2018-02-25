@@ -3,7 +3,7 @@
 /**
  * @hidden
  */
-export class QueryParams {
+export default class QueryParams {
   data: { [key: string]: any } = {};
 
   parseUrl(url: string) {
@@ -15,7 +15,7 @@ export class QueryParams {
           if (queries[i].indexOf('=') > 0) {
             var split = queries[i].split('=');
             if (split.length > 1) {
-              this.data[split[0].toLowerCase()] = split[1].split('#')[0];
+              this.data[split[0]] = split[1].split('#')[0];
             }
           }
         }
@@ -24,7 +24,6 @@ export class QueryParams {
   }
 
   get(key: string): any {
-    return this.data[key.toLowerCase()];
+    return this.data[key];
   }
-
 }

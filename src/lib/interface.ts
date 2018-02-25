@@ -1,4 +1,5 @@
 export type DocumentDirection = 'ltr' | 'rtl';
+export type PlatformConfigs = { [key: string]: PlatformConfig };
 
 // Use type to determine uniqueness;
 // For example: 'ios' and 'android' will not co-exist at the same time

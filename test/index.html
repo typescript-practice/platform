@@ -17,6 +17,8 @@
 
 <script type="text/javascript">
   (function () {
+    console.log('window.platform')
+    console.log(window.platform)
     var setupPlatform = window.platform.setupPlatform;
 
     var plt = setupPlatform({
@@ -36,7 +38,7 @@
               plt.triggerReady('wechat');
               console.debug(successData);
             }, function (errorData) {
-              plt.triggerFail(errorData); // to plt.ready()
+              plt.triggerFail('wechat'); // to plt.ready()
               console.debug(errorData);
             });
           };
@@ -69,7 +71,7 @@
               plt.triggerReady('alipay'); // to plt.ready()
               console.debug(successData);
             }, function (errorData) {
-              plt.triggerFail(errorData); // to plt.ready()
+              plt.triggerFail('alipay'); // to plt.ready()
               console.debug(errorData);
             });
           };
@@ -91,17 +93,17 @@
           plt.prepareReady = function () {
             const jsSDKUrl = '//g.alicdn.com/dingding/open-develop/1.6.9/dingtalk.js';
             var timer = window.setTimeout(function () {
-              plt.triggerFail('Dingtalk Init Timeout!')
+              plt.triggerFail('dingtalk')
             }, 10000);
 
             plt.loadScript(jsSDKUrl, function () {
               window.dd.ready(function () {
-                plt.triggerReady('Dingtalk Init Success!')
+                plt.triggerReady('dingtalk');
                 timer && window.clearTimeout(timer)
               });
 
               window.dd.error(function (err) {
-                plt.triggerFail('Dingtalk Init ERROR: ' + JSON.stringify(err))
+                plt.triggerFail('dingtalk');
                 timer && window.clearTimeout(timer)
               })
             })
@@ -131,9 +133,31 @@
     console.log(Object.keys(plt.platforms()));
     console.log(plt.settings());
     console.log(plt.versions());
+    console.log(plt.is('ios'));
 
-    plt.ready().then(function (data) {
-      console.log('ready', data)
+    plt.ready().then(function (readySource) {
+      switch (readySource) {
+        case 'dom':
+          console.log('web env');
+          break;
+        case 'cordova':
+          console.log('cordova env');
+          break;
+        case 'electron':
+          console.log('electron env');
+          break;
+        case 'alipay':
+          console.log('alipay env');
+          break;
+        case 'dingtalk':
+          console.log('dingtalk env');
+          break;
+        case 'wechat':
+          console.log('wechat env');
+          break;
+        default:
+          console.log(readySource + ' nor found!');
+      }
     }, function (reason) {
       console.log('ready error', reason)
     })

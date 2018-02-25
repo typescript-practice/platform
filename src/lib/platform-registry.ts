@@ -16,7 +16,7 @@ import {
   isWindows
 } from './platform-utils';
 
-export const PLATFORM_CONFIGS: { [key: string]: PlatformConfig } = {
+const PLATFORM_CONFIGS: { [key: string]: PlatformConfig } = {
   /**
    * core
    */
@@ -190,10 +190,10 @@ export const PLATFORM_CONFIGS: { [key: string]: PlatformConfig } = {
               // plt.resume.emit(ev);
             });
 
-            // cordova has its own exitApp method
-            plt.exitApp = function () {
-              // (<any>win)['navigator']['app'].exitApp();
-            };
+            // // cordova has its own exitApp method
+            // plt.exitApp = function () {
+            //   // (<any>win)['navigator']['app'].exitApp();
+            // };
 
             // cordova has fully loaded and we've added listeners
             plt.triggerReady('cordova');
@@ -224,3 +224,5 @@ export const PLATFORM_CONFIGS: { [key: string]: PlatformConfig } = {
     }
   },
 };
+
+export default PLATFORM_CONFIGS

@@ -3,7 +3,7 @@
 import {Platform} from '../platform';
 
 export function isMobile(plt: Platform): boolean {
-  return !isTablet(plt) && plt.isPlatformMatch('mobile', [/AppleWebKit.*Mobile.*/i]);
+  return !isTablet(plt) && plt.isPlatformMatch('mobile', ['AppleWebKit.*Mobile.*']);
 }
 
 export function isTablet(plt: Platform): boolean {
