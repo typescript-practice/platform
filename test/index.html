@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>Title</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <script type="text/javascript" src="../dist/platform.umd.js"></script>
   <script type="text/javascript" src="https://unpkg.com/vconsole@3.1.0/dist/vconsole.min.js"></script>
   <script>
@@ -19,11 +20,95 @@
     var setupPlatform = window.platform.setupPlatform;
 
     var plt = setupPlatform({
+      'wechat': {
+        type: 4,
+        initialize: function (plt) {
+          plt.prepareReady = function () {
+            const jsSDKUrl = '//res.wx.qq.com/open/js/jweixin-1.0.0.js';
+            const jsSDKName = 'WeixinJSBridge';
+            const jsSDKEventName = 'WeixinJSBridgeReady';
+            plt.loadJsSDK({
+              jsSDKUrl: jsSDKUrl,
+              jsSDKName: jsSDKName,
+              jsSDKEventName: jsSDKEventName,
+              timeout: 10000
+            }, function (successData) {
+              plt.triggerReady('wechat');
+              console.debug(successData);
+            }, function (errorData) {
+              plt.triggerFail(errorData); // to plt.ready()
+              console.debug(errorData);
+            });
+          };
+        },
+        settings: {
+          hideNavBar: true
+        },
+        isMatch: function (plt) {
+          return plt.isPlatformMatch('wechat', ['micromessenger']);
+        },
+        versionParser: function (plt) {
+          return plt.matchUserAgentVersion(/micromessenger\/(\d+).(\d+).(\d+)?/i);
+        }
+      },
+      'alipay': {
+        type: 4,
+        initialize: function (plt) {
+          // overwrite prepareReady function
+          plt.prepareReady = function () {
+            const jsSDKUrl = '//a.alipayobjects.com/g/h5-lib/alipayjsapi/3.0.2/alipayjsapi.min.js';
+            const jsSDKName = 'AlipayJSBridge';
+            const jsSDKEventName = 'AlipayJSBridgeReady';
+            // check and load js sdk
+            plt.loadJsSDK({
+              jsSDKUrl: jsSDKUrl,
+              jsSDKName: jsSDKName,
+              jsSDKEventName: jsSDKEventName,
+              timeout: 100
+            }, function (successData) {
+              plt.triggerReady('alipay'); // to plt.ready()
+              console.debug(successData);
+            }, function (errorData) {
+              plt.triggerFail(errorData); // to plt.ready()
+              console.debug(errorData);
+            });
+          };
+        },
+        settings: {
+          usePushWindow: false, // 页面切换使用alipay提供的 pushWindow() 方法开启新页面
+          hideNavBar: true
+        },
+        isMatch: function (plt) {
+          return plt.isPlatformMatch('alipay', ['alipay', 'alipayclient']);
+        },
+        versionParser: function (plt) {
+          return plt.matchUserAgentVersion(/alipayclient\/(\d+).(\d+).(\d+)?/i);
+        },
+      },
       'dingtalk': {
         type: 4,
+        initialize: function (plt) {
+          plt.prepareReady = function () {
+            const jsSDKUrl = '//g.alicdn.com/dingding/open-develop/1.6.9/dingtalk.js';
+            var timer = window.setTimeout(function () {
+              plt.triggerFail('Dingtalk Init Timeout!')
+            }, 10000);
+
+            plt.loadScript(jsSDKUrl, function () {
+              window.dd.ready(function () {
+                plt.triggerReady('Dingtalk Init Success!')
+                timer && window.clearTimeout(timer)
+              });
+
+              window.dd.error(function (err) {
+                plt.triggerFail('Dingtalk Init ERROR: ' + JSON.stringify(err))
+                timer && window.clearTimeout(timer)
+              })
+            })
+          };
+        },
         settings: {
           usePushWindow: false, // 方法开启新页面
-          jsSDKUrl: '//g.alicdn.com/dingding/open-develop/1.6.9/dingtalk.js',
           hideNavBar: true
         },
         isMatch: function (plt) {
@@ -38,14 +123,19 @@
         isMatch: function (plt) {
           return plt.isPlatformMatch('nexus', ['nexus'])
         },
-      }
+      },
     });
 
-    console.log(plt)
-    console.log(plt.versions())
+    console.log(plt);
+    console.log(plt.platforms());
+    console.log(Object.keys(plt.platforms()));
+    console.log(plt.settings());
+    console.log(plt.versions());
 
     plt.ready().then(function (data) {
       console.log('ready', data)
+    }, function (reason) {
+      console.log('ready error', reason)
     })
   })();
 </script>

@@ -1,4 +1,5 @@
 'use strict';
+
 import {getCss, isTextInput} from './lib/dom';
 import {QueryParams} from './lib/query-params';
 import {PLATFORM_CONFIGS} from './lib/platform-registry';
@@ -43,6 +44,7 @@ export class Platform {
   private _nPlt: string = '';
   private _readyPromise: Promise<any>;
   private _readyResolve: any;
+  private _readyReject: any;
   private _bbActions: BackButtonAction[] = [];
   private _registry: { [name: string]: PlatformConfig } = {};
   private _default: string;
@@ -79,7 +81,6 @@ export class Platform {
     const platform = win.navigator.platform;
     const userAgent = win.navigator.userAgent;
 
-    // init
     this._default = 'core';
     this._registry = platformConfigs || {}; // all platform configs
 
@@ -101,8 +102,9 @@ export class Platform {
     this.setQueryParams(win.location.href);
 
     // ready promise
-    this._readyPromise = new Promise(res => {
+    this._readyPromise = new Promise((res, rej) => {
       this._readyResolve = res;
+      this._readyReject = rej;
     });
 
     // TODO: back button
@@ -114,10 +116,7 @@ export class Platform {
     //   this.runBackButtonAction();
     // });
 
-    // init
     this.init();
-
-    this.prepareReady();
   }
 
   /**
@@ -309,6 +308,10 @@ export class Platform {
    */
   triggerReady(readySource: string) {
     this._readyResolve(readySource);
+  }
+
+  triggerFail(readySource: string) {
+    this._readyReject(readySource);
   }
 
   /**
@@ -929,6 +932,7 @@ export class Platform {
    */
   loadJsSDK(sdkInfo: SDKInfo, successCallback: Function, errorCallback: Function): void {
     const {jsSDKUrl, jsSDKName, jsSDKEventName, timeout = 10000} = sdkInfo;
+    let startTime = new Date().getTime();
 
     if (!jsSDKName) {
       errorCallback(`Please input the name of JSSDK!`);
@@ -959,7 +963,7 @@ export class Platform {
             document.removeEventListener(jsSDKEventName, beforeBridgeReady);
           }
 
-          successCallback(`JSSDK ${jsSDKName} loaded by JsSDKLoader!`);
+          successCallback(`JSSDK ${jsSDKName} loaded by JsSDKLoader in ${new Date().getTime() - startTime}ms!`);
           timer && window.clearTimeout(timer);
         }
 
@@ -976,7 +980,6 @@ export class Platform {
 
   /** @hidden */
   init() {
-
     // 1. resize event init
     this._initEvents();
 
@@ -985,63 +988,40 @@ export class Platform {
     for (let name in this._registry) {
       let _tmp: PlatformNode = new PlatformNode(this._registry, name);
 
+      if (_tmp.type !== undefined) {
+        console.warn('Each platform environment needs to pass in the specified "type" attribute');
+      }
+
+      if (!!_platforms[_tmp.type]) continue;
+
       if (_tmp.isMatch(this)) {
-        if (_tmp.type !== undefined) {
-          _platforms[_tmp.type] = _tmp;
-          _platforms[_tmp.type].name = name;
-        } else {
-          console.warn('You have miss something of "type"');
-          console.log(name, _tmp);
-        }
+        _platforms[_tmp.type] = _tmp;
+        _platforms[_tmp.type].name = name;
       }
     }
 
     for (let name in _platforms) {
-      // 1. this._platforms
+      // 2. this._platforms
       let _tmp: PlatformNode = _platforms[name];
       this._platforms.push(_tmp.name);
 
-      // 2. this._versions
-      this._versions[_tmp.name] = _tmp.version(this);
+      // 3. this._versions
+      const version = _tmp.version(this);
+      if (version) {
+        this._versions[_tmp.name] = version;
+      }
 
-      // 3. reduce settings
+      // 4. reduce settings
       _tmp.reduceSettings(this._settings);
 
-      // 4. initialize
+      // 5. initialize
       _tmp.initialize(this);
     }
 
-    if (Object.keys(_platforms).indexOf('4') === -1) {
-      this._platforms.push('web');
-    }
-
-    if (Object.keys(_platforms).indexOf('0') === -1) {
-      this._platforms.unshift(this._default);
-    }
-
-    console.log(this._platforms);
-    console.log(this._versions);
-    console.log(this._settings);
-    console.log(_platforms);
-    console.log(Object.keys(_platforms));
-
+    // 6. prepareReady
+    this.prepareReady();
   }
 }
-
-// function insertSuperset(registry: any, platformNode: PlatformNode) {
-//   let supersetPlaformName = platformNode.superset();
-//   if (supersetPlaformName) {
-//     // add a platform in between two exist platforms
-//     // so we can build the correct hierarchy of active platforms
-//     let supersetPlatform = new PlatformNode(registry, supersetPlaformName);
-//     supersetPlatform.parent = platformNode.parent;
-//     supersetPlatform.child = platformNode;
-//     if (supersetPlatform.parent) {
-//       supersetPlatform.parent.child = supersetPlatform;
-//     }
-//     platformNode.parent = supersetPlatform;
-//   }
-// }
 
 /**
  * @hidden
@@ -1052,7 +1032,7 @@ class PlatformNode {
   name: string = '';
   type: Type = 0;
 
-  constructor(public registry: { [name: string]: PlatformConfig }, platformName: string) {
+  constructor(registry: { [name: string]: PlatformConfig }, platformName: string) {
     this.c = registry[platformName];
     this.name = platformName;
     this.type = this.c.type;
@@ -1074,7 +1054,7 @@ class PlatformNode {
     this.c.initialize && this.c.initialize(plt);
   }
 
-  version(plt: Platform): PlatformVersion {
+  version(plt: Platform): PlatformVersion | null {
     if (this.c.versionParser) {
       const v = this.c.versionParser(plt);
       if (v) {
@@ -1091,33 +1071,49 @@ class PlatformNode {
         };
       }
     }
-    return {};
+    return null;
   }
 }
 
+/**
+ * Merge Parameters
+ * 1. 先进行参数合并, 自定义参数优先级高于默认配置, 比如: core中的配置, 自定义优先级高于默认
+ * 2. 之后进行平台匹配, 匹配到的 platforms 越后面的平台参数优先级越高, 比如: core < mobile < ios < iphone < cordova
+ * @hidden
+ */
+function mergeConfigs(defaultConfigs: any, customerConfig: any) {
+  let _finalConf = defaultConfigs;
+
+  const isObject = (val: any) => typeof val === 'object';
+  const isPlainObject = (val: any) => isObject(val) && Object.getPrototypeOf(val) === Object.prototype;
+
+  for (let outerKey in customerConfig) {
+    if (_finalConf[outerKey] && isObject(_finalConf[outerKey])) {
+      let _cusConf: any = customerConfig[outerKey];
+      let _defConf: any = _finalConf[outerKey];
+      for (let innerKey in _cusConf) {
+        if (isPlainObject(_cusConf[innerKey]) && isPlainObject(_defConf[innerKey])) {
+          Object.assign(_defConf[innerKey], _cusConf[innerKey]);
+        } else {
+          _defConf[innerKey] = _cusConf[innerKey];
+        }
+      }
+    } else {
+      _finalConf[outerKey] = customerConfig[outerKey];
+    }
+  }
+
+  return _finalConf;
+}
 
 /**
  * @hidden
  */
 export function setupPlatform(platformConfigs: { [key: string]: PlatformConfig }): Platform {
+  let _finalConf = mergeConfigs(PLATFORM_CONFIGS, platformConfigs);
 
-  let _finalConf = PLATFORM_CONFIGS;
-
-  const isObject = (val: any) => typeof val === 'object';
-
-  for (let outerKey in platformConfigs) {
-    if (_finalConf[outerKey] && isObject(_finalConf[outerKey])) {
-      let _cusConf: any = platformConfigs[outerKey];
-      let _defConf: any = _finalConf[outerKey];
-      for (let innerKey in _cusConf) {
-        let _tmp = {};
-        _tmp = Object.assign(_cusConf[innerKey], _defConf[innerKey]);
-        _defConf[innerKey] = _tmp;
-      }
-    } else {
-      _finalConf[outerKey] = platformConfigs[outerKey];
-    }
-  }
+  console.log('_finalConf');
+  console.log(_finalConf);
 
   const plt = new Platform(_finalConf);
 
