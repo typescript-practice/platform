@@ -12,8 +12,24 @@
 - [ready(): Promise<string>](#ready-promisestring)
 - [setDir(dir: DocumentDirection, updateDocument: boolean)](#setdirdir-documentdirection-updatedocument-boolean)
 - [dir(): DocumentDirection](#dir-documentdirection)
-- [Others(When code the `customerConfig.js`)](#otherswhen-code-the-customerconfigjs)
+- [setLang(language: string, updateDocument: boolean)](#setlanglanguage-string-updatedocument-boolean)
+- [lang(): string](#lang-string)
+- [registerBackButtonAction(fn: Function, priority: number = 0): Function](#registerbackbuttonactionfn-function-priority-number--0-function)
+- [getQueryParam(key: string)](#getqueryparamkey-string)
+- [url()](#url)
+- [width(): number](#width-number)
+- [height(): number](#height-number)
+- [isPortrait(): boolean | null](#isportrait-boolean--null)
+- [isLandscape(): boolean](#islandscape-boolean)
+- [settings(): any](#settings-any)
+- [Others(When code the `config.js`)](#otherswhen-code-the-configjs)
   - [prepareReady()](#prepareready)
+  - [testNavigatorPlatform(navigatorPlatformExpression: string): boolean](#testnavigatorplatformnavigatorplatformexpression-string-boolean)
+  - [matchUserAgentVersion(userAgentExpression: RegExp): any](#matchuseragentversionuseragentexpression-regexp-any)
+  - [testUserAgent(expression: string): boolean](#testuseragentexpression-string-boolean)
+  - [isPlatformMatch(queryStringName: string, userAgentAtLeastHas?: string[], userAgentMustNotHave: string[] = []): boolean](#isplatformmatchquerystringname-string-useragentatleasthas-string-useragentmustnothave-string---boolean)
+  - [loadScript(url: string, cb: Function)](#loadscripturl-string-cb-function)
+  - [loadJsSDK(sdkInfo: SDKInfo, successCallback: Function, errorCallback: Function): void {](#loadjssdksdkinfo-sdkinfo-successcallback-function-errorcallback-function-void-)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -353,14 +369,159 @@ attribute value set, such as `<html dir="ltr">` or `<html dir="rtl">`.
 
    
    
-## Others(When code the `customerConfig.js`)
+## setLang(language: string, updateDocument: boolean)
 
 
+Set the app's language and optionally the country code, which will update
+the `lang` attribute on the app's root `<html>` element.
+We recommend the app's `index.html` file already has the correct `lang`
+attribute value set, such as `<html lang="en">`. This method is useful if
+the language needs to be dynamically changed per user/session.
+[W3C: Declaring language in HTML](http://www.w3.org/International/questions/qa-html-language-declarations)
+
+* `@param {string}` language  Examples: `en-US`, `en-GB`, `ar`, `de`, `zh`, `es-MX`
+* `@param {boolean}` updateDocument  Specifies whether the `lang` attribute of `<html>` should be updated
+   
+
+
+## lang(): string
+
+
+Returns app's language and optional country code.
+We recommend the app's `index.html` file already has the correct `lang`
+attribute value set, such as `<html lang="en">`.
+[W3C: Declaring language in HTML](http://www.w3.org/International/questions/qa-html-language-declarations)
+
+* `@returns {string}`
+
+
+
+## registerBackButtonAction(fn: Function, priority: number = 0): Function
+
+
+The back button event is triggered when the user presses the native
+platform's back button, also referred to as the "hardware" back button.
+This event is only used within Cordova apps running on Android and
+Windows platforms. This event is not fired on iOS since iOS doesn't come
+with a hardware back button in the same sense an Android or Windows device
+does.
+
+Registering a hardware back button action and setting a priority allows
+apps to control which action should be called when the hardware back
+button is pressed. This method decides which of the registered back button
+actions has the highest priority and should be called.
+
+* `@param {Function}` fn Called when the back button is pressed,
+if this registered action has the highest priority.
+* `@param {number}` priority Set the priority for this action. Only the highest priority will execute. Defaults to `0`.
+* `@returns {Function}` A function that, when called, will unregister
+the back button action.
+
+
+
+## getQueryParam(key: string)
+
+Get the query string parameter in url.
+
+* `@param {string}` key - keyName
+
+
+## url()
+
+Get the current url.
+
+
+## width(): number
+
+Gets the width of the platform's viewport using `window.innerWidth`.
+Using this method is preferred since the dimension is a cached value,
+which reduces the chance of multiple and expensive DOM reads.
+
+## height(): number
+
+Gets the height of the platform's viewport using `window.innerHeight`.
+Using this method is preferred since the dimension is a cached value,
+which reduces the chance of multiple and expensive DOM reads.
+
+
+## isPortrait(): boolean | null
+
+Returns `true` if the app is in portrait mode.
+
+## isLandscape(): boolean
+
+Returns `true` if the app is in landscape mode.
+
+## settings(): any
+
+Get the final configuration for the matching platform.
+
+
+
+## Others(When code the `config.js`)
+
+
+When writing `config.js`, you need some utility functions to help with common problems, such as the ones listed below:
 
 
 ### prepareReady()
 
+This is the default prepareReady if it's not replaced by an hybrid app,
+such as Cordova or Electron. If there was no custom `prepareReady`
+method overwrite from an hybrid then it uses the method by default, which triggers
+the platform ready on the DOM ready event, and the default resolved
+value is `dom`.
+
+**Notice:** Used for hybrid app to overwrite to init their platform.
+
+### testNavigatorPlatform(navigatorPlatformExpression: string): boolean
+
+Check if the current window.navigator.platform parameter matches the specified regular parameter.
 
 
+### matchUserAgentVersion(userAgentExpression: RegExp): any
+
+According to the incoming regular match current userAgent version number.
+
+```js
+plt.matchUserAgentVersion(/Android (\d+).(\d+)?/)
+plt.matchUserAgentVersion(/OS (\d+)_(\d+)?/);
+plt.matchUserAgentVersion(/micromessenger\/(\d+).(\d+).(\d+)?/i);
+plt.matchUserAgentVersion(/alipayclient\/(\d+).(\d+).(\d+)?/i);
+plt.matchUserAgentVersion(/dingtalk\/(\d+).(\d+).(\d+)?/i);
+```
+
+### testUserAgent(expression: string): boolean
+
+Test if the incoming string matches userAgent.
 
 
+### isPlatformMatch(queryStringName: string, userAgentAtLeastHas?: string[], userAgentMustNotHave: string[] = []): boolean
+
+When writing a platform configuration using this method, the address bar parameters will affect the results of the final `plt.platforms ()` method, such as [Example](#Example) mentioned above.
+
+The wechat / alipay / dingtalk these three different platforms Correct matching initialization, if the address bar is: 
+
+```
+http://xxx/xx/?platform=core;mobile;ios;wechat
+```
+
+The `plt.platforms()` will returns```["core", "mobile", "ios", "wechat"]```. Including the corresponding `plt.settings ()`, this technique can be used to simulate on other platforms.
+
+
+### loadScript(url: string, cb: Function)
+
+Methods to load external js files.
+
+
+### loadJsSDK(sdkInfo: [SDKInfo](https://github.com/typescript-practice/platform/blob/master/src/lib/interface.ts#L34), successCallback: Function, errorCallback: Function): void {
+
+Methods to load JSSDK, including successful or failed callbacks.
+
+* `@param {SDKInfo}` sdkInfo
+* `@param {string}` sdkInfo.jsSDKUrl - The script url
+* `@param {string}` sdkInfo.jsSDKName - The name of jssdk on `window`, like: window.WeixinJSBridge
+* `@param {string}` sdkInfo.jsSDKEventName - Event name, When `window.WeixinJSBridge` is undefined, then listen event of `WeixinJSBridgeReady`
+* `@param {number}` [sdkInfo.timeout=10000] - timeout
+* `@param {Function}` successCallback
+* `@param {Function}` errorCallback

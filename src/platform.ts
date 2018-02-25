@@ -1,6 +1,6 @@
 'use strict';
 
-import {getCss, isTextInput} from './lib/dom';
+import {getCss} from './lib/dom';
 import QueryParams from './lib/query-params';
 import PLATFORM_CONFIGS from './lib/platform-registry';
 import mergeConfigs from './lib/merge-configs';
@@ -51,7 +51,7 @@ export class Platform {
   private _readyReject: any;
   private _bbActions: BackButtonAction[] = [];
   private _registry: { [name: string]: PlatformConfig } = {};
-  private _default: string;
+  private _core: string = '';
   private _pW = 0;
   private _pH = 0;
   private _lW = 0;
@@ -85,7 +85,7 @@ export class Platform {
     const platform = win.navigator.platform;
     const userAgent = win.navigator.userAgent;
 
-    this._default = 'core';
+    this.setCore('core');
     this._registry = platformConfigs || {}; // all platform configs
 
     // set values from "document"
@@ -492,8 +492,8 @@ export class Platform {
   }
 
   /**
-   * @hidden
-   */
+   * Get the final configuration for the matching platform.
+   * */
   settings(): any {
     return this._settings;
   }
@@ -680,7 +680,7 @@ export class Platform {
 
     let unReg: Function;
 
-    // use the native addEventListener, which is wrapped with zone
+    // use the native addEventListener
     ele['addEventListener'](eventName, callback, listenerOpts);
 
     unReg = function unregisterListener() {
@@ -697,7 +697,7 @@ export class Platform {
   /**
    * @hidden
    */
-  transitionEnd(el: HTMLElement, callback: { (ev?: TransitionEvent): void }, zone = true) {
+  transitionEnd(el: HTMLElement, callback: { (ev?: TransitionEvent): void }) {
     const unRegs: Function[] = [];
 
     function unregister() {
@@ -739,45 +739,45 @@ export class Platform {
     }
   }
 
-  /**
-   * @hidden
-   */
-  isActiveElement(ele: HTMLElement) {
-    return !!(ele && (this.getActiveElement() === ele));
-  }
+  // /**
+  //  * @hidden
+  //  */
+  // isActiveElement(ele: HTMLElement) {
+  //   return !!(ele && (this.getActiveElement() === ele));
+  // }
 
-  /**
-   * @hidden
-   */
-  getActiveElement() {
-    return this._doc['activeElement'];
-  }
+  // /**
+  //  * @hidden
+  //  */
+  // getActiveElement() {
+  //   return this._doc['activeElement'];
+  // }
 
-  /**
-   * @hidden
-   */
-  hasFocus(ele: HTMLElement) {
-    return !!((ele && (this.getActiveElement() === ele)) && ele.parentElement && (ele.parentElement.querySelector(':focus') === ele));
-  }
+  // /**
+  //  * @hidden
+  //  */
+  // hasFocus(ele: HTMLElement) {
+  //   return !!((ele && (this.getActiveElement() === ele)) && ele.parentElement && (ele.parentElement.querySelector(':focus') === ele));
+  // }
 
-  /**
-   * @hidden
-   */
-  hasFocusedTextInput() {
-    const ele = this.getActiveElement();
-    if (ele && ele.parentElement && isTextInput(ele)) {
-      return (ele.parentElement.querySelector(':focus') === ele);
-    }
-    return false;
-  }
+  // /**
+  //  * @hidden
+  //  */
+  // hasFocusedTextInput() {
+  //   const ele = this.getActiveElement();
+  //   if (ele && ele.parentElement && isTextInput(ele)) {
+  //     return (ele.parentElement.querySelector(':focus') === ele);
+  //   }
+  //   return false;
+  // }
 
-  /**
-   * @hidden
-   */
-  focusOutActiveElement() {
-    const activeElement: any = this.getActiveElement();
-    activeElement && activeElement.blur && activeElement.blur();
-  }
+  // /**
+  //  * @hidden
+  //  */
+  // focusOutActiveElement() {
+  //   const activeElement: any = this.getActiveElement();
+  //   activeElement && activeElement.blur && activeElement.blur();
+  // }
 
   private _initEvents() {
     // Test via a getter in the options object to see if the passive property is accessed
@@ -801,9 +801,9 @@ export class Platform {
         timerId = window.setTimeout(() => {
           // setting _isPortrait to null means the
           // dimensions will need to be looked up again
-          if (this.hasFocusedTextInput() === false) {
-            this._isPortrait = null;
-          }
+          // if (this.hasFocusedTextInput() === false) {
+          this._isPortrait = null;
+          // }
           // TODO: resize
           // this.resize.emit();
         }, 200);
@@ -839,8 +839,8 @@ export class Platform {
   /**
    * @hidden
    */
-  setDefault(platformName: string) {
-    this._default = platformName;
+  setCore(platformName: string) {
+    this._core = platformName;
   }
 
   /**
@@ -890,6 +890,8 @@ export class Platform {
    */
   isPlatformMatch(queryStringName: string, userAgentAtLeastHas?: string[], userAgentMustNotHave: string[] = []): boolean {
     const queryValue = this.getQueryParam('platform');
+    console.log(queryStringName)
+    console.log(queryValue)
     if (queryValue) {
       return this.testQuery(queryValue, queryStringName);
     }

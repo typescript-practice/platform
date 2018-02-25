@@ -9,7 +9,7 @@ export interface PlatformConfig {
   type: Type;
   initialize?: Function;
   settings?: {};
-  isMatch?: Function; // 匹配当前平台配置的方法
+  isMatch?: Function;
   versionParser?: Function;
 }
 
