@@ -13,12 +13,13 @@ import {
   PlatformConfigs,
   PlatformVersion,
   SDKInfo,
+  Type,
 } from './lib/interface';
 
 export {mergeConfigs, PLATFORM_CONFIGS};
 
 /**
- * @name Platform
+ * @class Platform
  * @description
  * The Platform service can be used to get information about your current device.
  * You can get all of the platforms associated with the device using the [platforms](#platforms)
@@ -28,12 +29,11 @@ export {mergeConfigs, PLATFORM_CONFIGS};
  * language direction, and much much more. With this information you can completely
  * customize your app to fit any device.
  *
- * @usage
+ * @example
  * ```ts
  * import Platform from 'tp-platform';
  *
  * const platform = new Platform();
- *
  * ```
  */
 export class Platform {
@@ -1020,7 +1020,7 @@ export class Platform {
     }
 
     // when normal web
-    if (Object.keys(_platforms).indexOf('4') === -1) {
+    if (Object.keys(_platforms).indexOf(`${Type.ENVIRONMENT}`) === -1) {
       this._platforms.push('web');
     }
 
