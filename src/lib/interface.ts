@@ -37,3 +37,4 @@ export interface SDKInfo {
   jsSDKEventName: string,
   timeout?: number
 }
+

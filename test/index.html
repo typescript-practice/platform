@@ -35,11 +35,11 @@
               jsSDKEventName: jsSDKEventName,
               timeout: 10000
             }, function (successData) {
-              plt.triggerReady('wechat');
               console.debug(successData);
+              plt.triggerReady('wechat');
             }, function (errorData) {
-              plt.triggerFail('wechat'); // to plt.ready()
               console.debug(errorData);
+              plt.triggerFail('wechat'); // to plt.ready()
             });
           };
         },
@@ -68,16 +68,15 @@
               jsSDKEventName: jsSDKEventName,
               timeout: 100
             }, function (successData) {
-              plt.triggerReady('alipay'); // to plt.ready()
               console.debug(successData);
+              plt.triggerReady('alipay'); // to plt.ready()
             }, function (errorData) {
-              plt.triggerFail('alipay'); // to plt.ready()
               console.debug(errorData);
+              plt.triggerFail('alipay'); // to plt.ready()
             });
           };
         },
         settings: {
-          usePushWindow: false, // 页面切换使用alipay提供的 pushWindow() 方法开启新页面
           hideNavBar: true
         },
         isMatch: function (plt) {
@@ -110,7 +109,6 @@
           };
         },
         settings: {
-          usePushWindow: false, // 方法开启新页面
           hideNavBar: true
         },
         isMatch: function (plt) {

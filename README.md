@@ -51,7 +51,7 @@ You can also get the orientation of the device, if it uses right-to-left
 language direction, and much much more. With this information you can completely
 customize your app to fit any device.
 
-Here is the doc of [Instance Members]()!
+Here is the doc of [Instance Members](https://github.com/typescript-practice/platform/blob/master/API.md)!
 
 ### ```setupPlatform(platformConfigs: PlatformConfigs)```
 
