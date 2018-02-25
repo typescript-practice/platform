@@ -1,5 +1,7 @@
 export type DocumentDirection = 'ltr' | 'rtl';
 
+// Use type to determine uniqueness;
+// For example: 'ios' and 'android' will not co-exist at the same time
 export enum Type {BASE = 0, PLATFORM = 1, SYSTEM = 2, BRAND = 3, ENVIRONMENT = 4} // 指定开始, 后面递增
 
 export interface PlatformConfig {
@@ -7,7 +9,7 @@ export interface PlatformConfig {
   initialize?: Function;
   settings?: {};
   isMatch?: Function; // 匹配当前平台配置的方法
-  versionParser?: any;
+  versionParser?: Function;
 }
 
 export interface PlatformVersion {
