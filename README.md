@@ -22,10 +22,11 @@ const plt = setupPlatform({
   // configs
 });
 
-plt.platforms(); // 
-plt.settings(); // 
-plt.versions(); // 
-console.log(plt.is('ios'));
+plt.platforms(); // ["core", "desktop", "mac", "web"]
+plt.settings(); // {mode: "md", hoverCSS: true}
+plt.versions(); // {}
+console.log(plt.is('ios')); // false
+console.log(plt.is('desktop')); // true
 ```
 
 ## Install

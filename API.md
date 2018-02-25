@@ -566,7 +566,7 @@ plt.loadJsSDK({
   jsSDKUrl: jsSDKUrl,
   jsSDKName: jsSDKName,
   jsSDKEventName: jsSDKEventName,
-  timeout: 100
+  timeout: 5000 // 5s
 }, function (successData) {
   console.debug(successData);
   plt.triggerReady('alipay'); // to plt.ready()
