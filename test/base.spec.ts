@@ -96,9 +96,7 @@ describe('Normal Test', function() {
   })
 
   it('userAgent()', function() {
-    expect(plt.userAgent()).toEqual(
-      'Mozilla/5.0 (darwin) AppleWebKit/537.36 (KHTML, like Gecko) jsdom/11.6.2'
-    )
+    expect(plt.userAgent()).toMatch('AppleWebKit/537.36 (KHTML, like Gecko) jsdom/11.6.2')
   })
 
   it('isPortrait()', function() {
