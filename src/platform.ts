@@ -1,10 +1,10 @@
-'use strict';
+'use strict'
 
-import {getCss} from './lib/dom';
-import QueryParams from './lib/query-params';
-import PLATFORM_CONFIGS from './lib/platform-registry';
-import mergeConfigs from './lib/merge-configs';
-import PlatformNode from './lib/PlatformNode';
+import { getCss } from './lib/dom'
+import QueryParams from './lib/query-params'
+import PLATFORM_CONFIGS from './lib/platform-registry'
+import mergeConfigs from './lib/merge-configs'
+import PlatformNode from './lib/PlatformNode'
 import {
   DocumentDirection,
   EventListenerOptions,
@@ -12,10 +12,10 @@ import {
   PlatformConfigs,
   PlatformVersion,
   SDKInfo,
-  Type,
-} from './lib/interface';
+  Type
+} from './lib/interface'
 
-export {mergeConfigs, PLATFORM_CONFIGS};
+export { mergeConfigs, PLATFORM_CONFIGS }
 
 /**
  * @class Platform
@@ -36,23 +36,22 @@ export {mergeConfigs, PLATFORM_CONFIGS};
  * ```
  */
 export class Platform {
-
   /** @internal */
   Css: {
-    transform?: string;
-    transition?: string;
-    transitionDuration?: string;
-    transitionDelay?: string;
-    transitionTimingFn?: string;
-    transitionStart?: string;
-    transitionEnd?: string;
-    transformOrigin?: string;
-    animationDelay?: string;
-  };
+    transform?: string
+    transition?: string
+    transitionDuration?: string
+    transitionDelay?: string
+    transitionTimingFn?: string
+    transitionStart?: string
+    transitionEnd?: string
+    transformOrigin?: string
+    animationDelay?: string
+  } = {}
 
   /** @internal */
-  _platforms: string[] = [];
-  _settings: any = {};
+  _platforms: string[] = []
+  _settings: any = {}
 
   /**
    * Returns if this app is using right-to-left language direction or not.
@@ -61,63 +60,62 @@ export class Platform {
    * [W3C: Structural markup and right-to-left text in HTML](http://www.w3.org/International/questions/qa-html-dir)
    * @returns {boolean}
    */
-  isRTL: boolean;
+  isRTL: boolean
 
-  private _win: Window;
-  private _doc: HTMLDocument;
-  private _versions: { [name: string]: PlatformVersion } = {};
-  private _dir: DocumentDirection;
-  private _lang: string = '';
-  private _ua: string = '';
-  private _qp = new QueryParams(); // init settings
-  private _nPlt: string = '';
-  private _readyPromise: Promise<any>;
-  private _readyResolve: any;
-  private _readyReject: any;
+  private _win: Window
+  private _doc: HTMLDocument
+  private _versions: { [name: string]: PlatformVersion } = {}
+  private _dir: DocumentDirection
+  private _lang: string = ''
+  private _ua: string = ''
+  private _qp = new QueryParams() // init settings
+  private _nPlt: string = ''
+  private _readyPromise: Promise<any>
+  private _readyResolve: any
+  private _readyReject: any
   // private _bbActions: BackButtonAction[] = [];
-  private _registry: { [name: string]: PlatformConfig } = {};
-  private _core: string = '';
-  private _pW = 0;
-  private _pH = 0;
-  private _lW = 0;
-  private _lH = 0;
-  private _isPortrait: boolean | null = null;
-  private _uiEvtOpts = false;
+  private _registry: { [name: string]: PlatformConfig } = {}
+  private _core: string = ''
+  private _pW = 0
+  private _pH = 0
+  private _lW = 0
+  private _lH = 0
+  private _isPortrait: boolean | null = null
+  private _uiEvtOpts = false
 
   constructor(platformConfigs: PlatformConfigs) {
+    const doc = document
+    const win = doc.defaultView // read-only
+    const docElement = doc.documentElement
+    const dir = docElement.dir
+    const platform = win.navigator.platform
+    const userAgent = win.navigator.userAgent
 
-    const doc = document;
-    const win = doc.defaultView; // read-only
-    const docElement = doc.documentElement;
-    const dir = docElement.dir;
-    const platform = win.navigator.platform;
-    const userAgent = win.navigator.userAgent;
-
-    this.setCore('core');
-    this._registry = platformConfigs || {}; // all platform configs
+    this.setCore('core')
+    this._registry = platformConfigs || {} // all platform configs
 
     // set values from "document"
-    this._doc = doc;
-    this._dir = dir === 'rtl' ? 'rtl' : 'ltr';
-    this.isRTL = (dir === 'rtl');
-    this.setLang(docElement.lang, false);
+    this._doc = doc
+    this._dir = dir === 'rtl' ? 'rtl' : 'ltr'
+    this.isRTL = dir === 'rtl'
+    this.setLang(docElement.lang, false)
 
     // set css properties
-    this.Css = getCss(docElement);
+    this.setCssProps(docElement)
 
     // set values from "window"
-    this._win = win;
-    this.setNavigatorPlatform(platform);
-    this.setUserAgent(userAgent);
+    this._win = win
+    this.setNavigatorPlatform(platform)
+    this.setUserAgent(userAgent)
 
     // set location values
-    this.setQueryParams(win.location.href);
+    this.setQueryParams(win.location.href)
 
     // ready promise
     this._readyPromise = new Promise((res, rej) => {
-      this._readyResolve = res;
-      this._readyReject = rej;
-    });
+      this._readyResolve = res
+      this._readyReject = rej
+    })
 
     // TODO: back button
     // this.backButton.subscribe(() => {
@@ -128,9 +126,8 @@ export class Platform {
     //   this.runBackButtonAction();
     // });
 
-    this.init();
+    this.init()
   }
-
 
   // Methods
   // **********************************************
@@ -173,7 +170,7 @@ export class Platform {
    * @param {string} platformName
    */
   is(platformName: string): boolean {
-    return (this._platforms.indexOf(platformName) > -1);
+    return this._platforms.indexOf(platformName) > -1
   }
 
   /**
@@ -193,7 +190,7 @@ export class Platform {
   platforms(): Array<string> {
     // get the array of active platforms, which also knows the hierarchy,
     // with the last one the most important
-    return this._platforms;
+    return this._platforms
   }
 
   /**
@@ -210,7 +207,7 @@ export class Platform {
    */
   versions(): { [name: string]: PlatformVersion } {
     // get all the platforms that have a valid parsed version
-    return this._versions;
+    return this._versions
   }
 
   /**
@@ -262,7 +259,7 @@ export class Platform {
    * @returns {promise}
    */
   ready(): Promise<string> {
-    return this._readyPromise;
+    return this._readyPromise
   }
 
   /**
@@ -272,11 +269,11 @@ export class Platform {
    * such as Cordova or Electron, then it uses the default DOM ready.
    */
   triggerReady(readySource: string) {
-    this._readyResolve(readySource);
+    this._readyResolve(readySource)
   }
 
   triggerFail(reason: string) {
-    this._readyReject(reason);
+    this._readyReject(reason)
   }
 
   /**
@@ -288,20 +285,21 @@ export class Platform {
    * value is `dom`.
    */
   prepareReady() {
-    const self = this;
+    const self = this
 
+    /* istanbul ignore else */
     if (self._doc.readyState === 'complete' || self._doc.readyState === 'interactive') {
-      self.triggerReady('dom');
-
+      self.triggerReady('dom')
     } else {
-      self._doc.addEventListener('DOMContentLoaded', completed, false);
-      self._win.addEventListener('load', completed, false);
+      self._doc.addEventListener('DOMContentLoaded', completed, false)
+      self._win.addEventListener('load', completed, false)
     }
 
+    /* istanbul ignore next */
     function completed() {
-      self._doc.removeEventListener('DOMContentLoaded', completed, false);
-      self._win.removeEventListener('load', completed, false);
-      self.triggerReady('dom');
+      self._doc.removeEventListener('DOMContentLoaded', completed, false)
+      self._win.removeEventListener('load', completed, false)
+      self.triggerReady('dom')
     }
   }
 
@@ -316,11 +314,11 @@ export class Platform {
    * @param {boolean} updateDocument
    */
   setDir(dir: DocumentDirection, updateDocument: boolean) {
-    this._dir = dir;
-    this.isRTL = (dir === 'rtl');
+    this._dir = dir
+    this.isRTL = dir === 'rtl'
 
     if (updateDocument !== false) {
-      this._doc['documentElement'].setAttribute('dir', dir);
+      this._doc['documentElement'].setAttribute('dir', dir)
     }
   }
 
@@ -332,9 +330,8 @@ export class Platform {
    * @returns {DocumentDirection}
    */
   dir(): DocumentDirection {
-    return this._dir;
+    return this._dir
   }
-
 
   /**
    * Set the app's language and optionally the country code, which will update
@@ -347,9 +344,9 @@ export class Platform {
    * @param {boolean} updateDocument  Specifies whether the `lang` attribute of `<html>` should be updated
    */
   setLang(language: string, updateDocument: boolean) {
-    this._lang = language;
+    this._lang = language
     if (updateDocument !== false) {
-      this._doc['documentElement'].setAttribute('lang', language);
+      this._doc['documentElement'].setAttribute('lang', language)
     }
   }
 
@@ -361,7 +358,7 @@ export class Platform {
    * @returns {string}
    */
   lang(): string {
-    return this._lang;
+    return this._lang
   }
 
   // Methods meant to be overridden by the engine
@@ -453,7 +450,6 @@ export class Platform {
   //   winner && winner.fn && winner.fn();
   // }
 
-
   // Getter/Setter Methods
   // **********************************************
 
@@ -461,91 +457,91 @@ export class Platform {
    * @hidden
    */
   win() {
-    return this._win;
+    return this._win
   }
 
-  /**
-   * @hidden
-   */
-  setWindow(win: Window) {
-    this._win = win;
-  }
+  // /**
+  //  * @hidden
+  //  */
+  // setWindow(win: Window) {
+  //   this._win = win;
+  // }
 
   /**
    * @hidden
    */
   doc() {
-    return this._doc;
+    return this._doc
   }
 
-  /**
-   * @hidden
-   */
-  setDocument(doc: HTMLDocument) {
-    this._doc = doc;
-  }
+  // /**
+  //  * @hidden
+  //  */
+  // setDocument(doc: HTMLDocument) {
+  //   this._doc = doc;
+  // }
 
   /**
    * @hidden
    */
   setCssProps(docElement: HTMLElement) {
-    this.Css = getCss(docElement);
+    this.Css = getCss(docElement)
   }
 
   /**
    * Get the final configuration for the matching platform.
    */
   settings(): any {
-    return this._settings;
+    return this._settings
   }
 
   /**
    * @hidden
    */
   userAgent(): string {
-    return this._ua || '';
+    return this._ua || ''
   }
 
   /**
    * @hidden
    */
   setUserAgent(userAgent: string) {
-    this._ua = userAgent;
+    this._ua = userAgent
   }
 
   /**
    * @hidden
    */
   setQueryParams(url: string) {
-    this._qp.parseUrl(url);
+    this._qp.parseUrl(url)
   }
 
   /**
    * Get the query string parameter
    */
   getQueryParam(key: string) {
-    return this._qp.get(key);
+    return this._qp.get(key)
   }
 
   /**
    * Get the current url.
    */
   url() {
-    return this._win['location']['href'];
+    return this._win['location']['href']
   }
 
   /**
    * @hidden
    */
   navigatorPlatform(): string {
-    return this._nPlt || '';
+    return this._nPlt || ''
   }
 
   /**
    * @hidden
    */
   setNavigatorPlatform(navigatorPlt: string) {
-    this._nPlt = navigatorPlt;
+    this._nPlt = navigatorPlt
   }
 
   /**
@@ -554,8 +550,8 @@ export class Platform {
    * which reduces the chance of multiple and expensive DOM reads.
    */
   width(): number {
-    this._calcDim();
-    return this._isPortrait ? this._pW : this._lW;
+    this._calcDim()
+    return this._isPortrait ? this._pW : this._lW
   }
 
   /**
@@ -564,119 +560,133 @@ export class Platform {
    * which reduces the chance of multiple and expensive DOM reads.
    */
   height(): number {
-    this._calcDim();
-    return this._isPortrait ? this._pH : this._lH;
+    this._calcDim()
+    return this._isPortrait ? this._pH : this._lH
   }
 
-  /**
-   * @hidden
-   */
-  getElementComputedStyle(ele: HTMLElement, pseudoEle?: string) {
-    return this._win['getComputedStyle'](ele, pseudoEle);
-  }
+  // /**
+  //  * @hidden
+  //  */
+  // getElementComputedStyle(ele: HTMLElement, pseudoEle?: string) {
+  //   return this._win['getComputedStyle'](ele, pseudoEle);
+  // }
 
-  /**
-   * @hidden
-   */
-  getElementFromPoint(x: number, y: number) {
-    return this._doc['elementFromPoint'](x, y) as HTMLElement;
-  }
+  // /**
+  //  * @hidden
+  //  */
+  // getElementFromPoint(x: number, y: number) {
+  //   return this._doc['elementFromPoint'](x, y) as HTMLElement;
+  // }
 
-  /**
-   * @hidden
-   */
-  getElementBoundingClientRect(ele: HTMLElement) {
-    return ele['getBoundingClientRect']();
-  }
+  // /**
+  //  * @hidden
+  //  */
+  // getElementBoundingClientRect(ele: HTMLElement) {
+  //   return ele['getBoundingClientRect']();
+  // }
 
   /**
    * Returns `true` if the app is in portait mode.
    */
   isPortrait(): boolean | null {
-    this._calcDim();
-    return this._isPortrait;
+    this._calcDim()
+    return this._isPortrait
   }
 
   /**
    * Returns `true` if the app is in landscape mode.
    */
   isLandscape(): boolean {
-    return !this.isPortrait();
+    return !this.isPortrait()
   }
 
-
+  /* istanbul ignore next */
   /**
    * @hidden
    * Built to use modern event listener options, like "passive".
    * If options are not supported, then just return a boolean which
    * represents "capture". Returns a method to remove the listener.
    */
-  registerListener(ele: any, eventName: string, callback: { (ev?: UIEvent): void }, opts: EventListenerOptions, unregisterListenersCollection?: Function[]): Function {
+  registerListener(
+    ele: any,
+    eventName: string,
+    callback: { (ev?: UIEvent): void },
+    opts: EventListenerOptions,
+    unregisterListenersCollection?: Function[]
+  ): Function {
     // use event listener options when supported
     // otherwise it's just a boolean for the "capture" arg
-    const listenerOpts: any = this._uiEvtOpts ? {
-      'capture': !!opts.capture,
-      'passive': !!opts.passive,
-    } : !!opts.capture;
+    const listenerOpts: any = this._uiEvtOpts
+      ? {
+          capture: !!opts.capture,
+          passive: !!opts.passive
+        }
+      : !!opts.capture
 
-    let unReg: Function;
+    let unReg: Function
 
     // use the native addEventListener
-    ele['addEventListener'](eventName, callback, listenerOpts);
+    ele['addEventListener'](eventName, callback, listenerOpts)
 
     unReg = function unregisterListener() {
-      ele['removeEventListener'](eventName, callback, listenerOpts);
-    };
+      ele['removeEventListener'](eventName, callback, listenerOpts)
+    }
 
     if (unregisterListenersCollection) {
-      unregisterListenersCollection.push(unReg);
+      unregisterListenersCollection.push(unReg)
     }
 
-    return unReg;
+    return unReg
   }
 
-  /**
-   * @hidden
-   */
-  transitionEnd(el: HTMLElement, callback: { (ev?: TransitionEvent): void }) {
-    const unRegs: Function[] = [];
-
-    function unregister() {
-      unRegs.forEach(unReg => {
-        unReg();
-      });
-    }
-
-    function onTransitionEnd(ev: TransitionEvent) {
-      if (el === ev.target) {
-        unregister();
-        callback(ev);
-      }
-    }
-
-    if (el) {
-      this.registerListener(el, 'webkitTransitionEnd', onTransitionEnd as any, {}, unRegs);
-      this.registerListener(el, 'transitionend', onTransitionEnd as any, {}, unRegs);
-    }
-
-    return unregister;
-  }
+  // /**
+  //  * @hidden
+  //  */
+  // transitionEnd(el: HTMLElement, callback: { (ev?: TransitionEvent): void }) {
+  //   const unRegs: Function[] = [];
+  //
+  //   function unregister() {
+  //     unRegs.forEach(unReg => {
+  //       unReg();
+  //     });
+  //   }
+  //
+  //   function onTransitionEnd(ev: TransitionEvent) {
+  //     if (el === ev.target) {
+  //       unregister();
+  //       callback(ev);
+  //     }
+  //   }
+  //
+  //   if (el) {
+  //     this.registerListener(el, 'webkitTransitionEnd', onTransitionEnd as any, {}, unRegs);
+  //     this.registerListener(el, 'transitionend', onTransitionEnd as any, {}, unRegs);
+  //   }
+  //
+  //   return unregister;
+  // }
 
   /**
    * @hidden
    */
   windowLoad(callback: Function) {
-    const win = this._win;
-    const doc = this._doc;
-    let unreg: Function;
+    const win = this._win
+    const doc = this._doc
+    let unreg: Function
 
+    /* istanbul ignore else */
     if (doc.readyState === 'complete') {
-      callback(win, doc);
+      callback(win, doc)
     } else {
-      unreg = this.registerListener(win, 'load', () => {
-        unreg && unreg();
-        callback(win, doc);
-      }, {});
+      unreg = this.registerListener(
+        win,
+        'load',
+        () => {
+          unreg && unreg()
+          callback(win, doc)
+        },
+        {}
+      )
     }
   }
 
@@ -720,8 +730,6 @@ export class Platform {
   //   activeElement && activeElement.blur && activeElement.blur();
   // }
 
-
-
   // Platform Registry
   // **********************************************
 
@@ -729,28 +737,28 @@ export class Platform {
    * @hidden
    */
   setPlatformConfigs(platformConfigs: PlatformConfigs) {
-    this._registry = platformConfigs || {};
+    this._registry = platformConfigs || {}
   }
 
   /**
    * @hidden
    */
   getPlatformConfig(platformName: string): PlatformConfig {
-    return this._registry[platformName] || {};
+    return this._registry[platformName] || {}
   }
 
   /**
    * @hidden
    */
   registry() {
-    return this._registry;
+    return this._registry
   }
 
   /**
    * @hidden
    */
   setCore(platformName: string) {
-    this._core = platformName;
+    this._core = platformName
   }
 
   /**
@@ -759,16 +767,16 @@ export class Platform {
    * @example core;ios;iphone -> ios
    */
   testQuery(queryValue: string, queryTestValue: string): boolean {
-    const valueSplit = queryValue.toLowerCase().split(';');
-    return valueSplit.indexOf(queryTestValue) > -1;
+    const valueSplit = queryValue.toLowerCase().split(';')
+    return valueSplit.indexOf(queryTestValue) > -1
   }
 
   /**
    * @hidden
    */
   testNavigatorPlatform(navigatorPlatformExpression: string): boolean {
-    const rgx = new RegExp(navigatorPlatformExpression, 'i');
-    return rgx.test(this._nPlt);
+    const rgx = new RegExp(navigatorPlatformExpression, 'i')
+    return rgx.test(this._nPlt)
   }
 
   /**
@@ -776,116 +784,120 @@ export class Platform {
    */
   matchUserAgentVersion(userAgentExpression: RegExp): any {
     if (this._ua && userAgentExpression) {
-      const val = this._ua.match(userAgentExpression);
+      const val = this._ua.match(userAgentExpression)
       if (val) {
         return {
           major: val[1],
           minor: val[2],
-          patch: val[3],
-        };
+          patch: val[3]
+        }
       }
     }
   }
 
   testUserAgent(expression: string): boolean {
     if (this._ua) {
-      const rgx = new RegExp(expression, 'i');
-      return rgx.test(this._ua);
+      const rgx = new RegExp(expression, 'i')
+      return rgx.test(this._ua)
     }
-    return false;
+    return false
   }
 
   /**
    * @hidden
    */
-  isPlatformMatch(queryStringName: string, userAgentAtLeastHas?: string[], userAgentMustNotHave: string[] = []): boolean {
-    const queryValue = this.getQueryParam('platform');
-    console.log(queryStringName);
-    console.log(queryValue);
+  isPlatformMatch(
+    queryStringName: string,
+    userAgentAtLeastHas?: string[],
+    userAgentMustNotHave: string[] = []
+  ): boolean {
+    const queryValue = this.getQueryParam('platform')
     if (queryValue) {
-      return this.testQuery(queryValue, queryStringName);
+      return this.testQuery(queryValue, queryStringName)
     }
 
-    userAgentAtLeastHas = userAgentAtLeastHas || [queryStringName];
+    userAgentAtLeastHas = userAgentAtLeastHas || [queryStringName]
 
     for (let i = 0; i < userAgentAtLeastHas.length; i++) {
       if (this.testUserAgent(userAgentAtLeastHas[i])) {
         for (let j = 0; j < userAgentMustNotHave.length; j++) {
           if (this.testUserAgent(userAgentMustNotHave[j])) {
-            return false;
+            return false
           }
         }
-        return true;
+        return true
       }
     }
 
-    return false;
+    return false
   }
 
+  /* istanbul ignore next */
   /**
    * @hidden
    */
   loadScript(url: string, cb: Function) {
-    const _head: HTMLHeadElement = document.getElementsByTagName('head')[0];
-    const _script: HTMLScriptElement = document.createElement('script');
-    const startTime = new Date().getTime();
-    _script.setAttribute('type', 'text/javascript');
-    _script.setAttribute('src', url);
-    _head.appendChild(_script);
-    _script.onload = function () {
-      console.debug(`Script "${url}" loaded in ${new Date().getTime() - startTime}ms!`);
+    const _head: HTMLHeadElement = this.doc().getElementsByTagName('head')[0]
+    const _script: HTMLScriptElement = this.doc().createElement('script')
+    const startTime = new Date().getTime()
+    _script.setAttribute('type', 'text/javascript')
+    _script.setAttribute('src', url)
+    _head.appendChild(_script)
+    _script.onload = function() {
+      console.debug(`Script "${url}" loaded in ${new Date().getTime() - startTime}ms!`)
       /* istanbul ignore next */
-      cb && cb.call(null);
-    };
+      cb && cb.call(null)
+    }
   }
 
+  /* istanbul ignore next */
   /**
    * @hidden
    */
   loadJsSDK(sdkInfo: SDKInfo, successCallback: Function, errorCallback: Function): void {
-    const {jsSDKUrl, jsSDKName, jsSDKEventName, timeout = 10000} = sdkInfo;
+    const { jsSDKUrl, jsSDKName, jsSDKEventName, timeout = 10000 } = sdkInfo
 
     if (!jsSDKName) {
-      errorCallback(`Please input the name of JSSDK!`);
-      return;
+      errorCallback(`Please input the name of JSSDK!`)
+      return
     }
     if (!jsSDKUrl) {
-      errorCallback(`JSSDK ${jsSDKName} loaded without jsSDKUrl params!`);
-      return;
+      errorCallback(`JSSDK ${jsSDKName} loaded without jsSDKUrl params!`)
+      return
     }
     if (!jsSDKEventName) {
-      errorCallback(`JSSDK ${jsSDKName} loaded without jsSDKEventName params!`);
-      return;
+      errorCallback(`JSSDK ${jsSDKName} loaded without jsSDKEventName params!`)
+      return
     }
 
-    const win: any = this.win();
+    const win: any = this.win()
     let timer = window.setTimeout(() => {
-      errorCallback(`JSSDK ${jsSDKName} loaded timeout!`);
-    }, timeout);
+      errorCallback(`JSSDK ${jsSDKName} loaded timeout!`)
+    }, timeout)
 
     if (win[jsSDKName] !== undefined) {
-      successCallback(`JSSDK ${jsSDKName} already loaded!`);
-      timer && window.clearTimeout(timer);
+      successCallback(`JSSDK ${jsSDKName} already loaded!`)
+      timer && window.clearTimeout(timer)
     } else {
       this.loadScript(jsSDKUrl, () => {
         function beforeBridgeReady() {
           // 解除绑定
           if (document.removeEventListener) {
-            document.removeEventListener(jsSDKEventName, beforeBridgeReady);
+            document.removeEventListener(jsSDKEventName, beforeBridgeReady)
           }
 
-          successCallback(`JSSDK ${jsSDKName} loaded by JsSDKLoader!`);
-          timer && window.clearTimeout(timer);
+          successCallback(`JSSDK ${jsSDKName} loaded by JsSDKLoader!`)
+          timer && window.clearTimeout(timer)
         }
 
         if (win[jsSDKName] === undefined) {
           if (document.addEventListener) {
-            document.addEventListener(jsSDKEventName, beforeBridgeReady, false);
+            document.addEventListener(jsSDKEventName, beforeBridgeReady, false)
           }
         } else {
-          beforeBridgeReady();
+          beforeBridgeReady()
         }
-      });
+      })
     }
   }
 
@@ -894,85 +906,95 @@ export class Platform {
    */
   init() {
     // 1. resize event init
-    this._initEvents();
+    this._initEvents()
 
-    let _platforms: { [key: string]: PlatformNode } = {};
+    let _platforms: { [key: string]: PlatformNode } = {}
+    this._platforms = []
+    this._versions = {}
+    this._settings = {}
 
     for (let name in this._registry) {
-      let _tmp: PlatformNode = new PlatformNode(this._registry, name);
+      let _tmp: PlatformNode = new PlatformNode(this._registry, name)
 
       if (_tmp.type === undefined) {
-        console.warn('Each platform environment needs to pass in the specified "type" attribute');
+        console.warn('Each platform environment needs to pass in the specified "type" attribute')
       }
 
-      if (_platforms[_tmp.type]) continue;
+      if (_platforms[_tmp.type]) continue
 
       if (_tmp.isMatch(this)) {
-        _platforms[_tmp.type] = _tmp;
-        _platforms[_tmp.type].name = name;
+        _platforms[_tmp.type] = _tmp
+        _platforms[_tmp.type].name = name
       }
     }
 
     for (let name in _platforms) {
       // 2. this._platforms
-      let _tmp: PlatformNode = _platforms[name];
-      this._platforms.push(_tmp.name);
+      let _tmp: PlatformNode = _platforms[name]
+      this._platforms.push(_tmp.name)
 
       // 3. this._versions
-      const version = _tmp.version(this);
+      const version = _tmp.version(this)
       if (version) {
-        this._versions[_tmp.name] = version;
+        this._versions[_tmp.name] = version
       }
 
       // 4. reduce settings
-      _tmp.reduceSettings(this._settings);
+      _tmp.reduceSettings(this._settings)
 
       // 5. initialize
-      _tmp.initialize(this);
+      _tmp.initialize(this)
     }
 
     // when normal web
     if (Object.keys(_platforms).indexOf(`${Type.ENVIRONMENT}`) === -1) {
-      this._platforms.push('web');
+      this._platforms.push('web')
     }
 
     // 6. prepareReady
-    this.prepareReady();
+    this.prepareReady()
   }
-
 
   private _initEvents() {
     // Test via a getter in the options object to see if the passive property is accessed
-    const NOOP = function () {
+    /* istanbul ignore next */
+    const NOOP = function() {
       // empty
-    };
+    }
     try {
       let opts = Object.defineProperty({}, 'passive', {
         get: () => {
-          this._uiEvtOpts = true;
+          /* istanbul ignore next */
+          this._uiEvtOpts = true
         }
-      });
-      this._win.addEventListener('optsTest', NOOP, opts);
+      })
+      this._win.addEventListener('optsTest', NOOP, opts)
     } catch (e) {
       // empty
     }
 
     // add the window resize event listener XXms after
     window.setTimeout(() => {
-      let timerId: number;
-      this.registerListener(this._win, 'resize', () => {
-        window.clearTimeout(timerId);
-        timerId = window.setTimeout(() => {
-          // setting _isPortrait to null means the
-          // dimensions will need to be looked up again
-          // if (this.hasFocusedTextInput() === false) {
-          this._isPortrait = null;
-          // }
-          // TODO: resize
-          // this.resize.emit();
-        }, 200);
-      }, {passive: true});
-    }, 2000);
+      let timerId: number
+      /* istanbul ignore next */
+      this.registerListener(
+        this._win,
+        'resize',
+        () => {
+          window.clearTimeout(timerId)
+          timerId = window.setTimeout(() => {
+            // setting _isPortrait to null means the
+            // dimensions will need to be looked up again
+            // if (this.hasFocusedTextInput() === false) {
+            this._isPortrait = null
+            // }
+            // TODO: resize
+            // this.resize.emit();
+          }, 200)
+        },
+        { passive: true }
+      )
+    }, 2000)
   }
 
   private _calcDim() {
@@ -987,51 +1009,52 @@ export class Platform {
     // even when the device is in portrait but
     // the second time it is measured it is correct.
     // Hopefully this check will not be needed in the future
-    if (this._isPortrait === null || this._isPortrait === false && this._win['innerWidth'] < this._win['innerHeight']) {
-      let win = this._win;
+    if (
+      this._isPortrait === null ||
+      (this._isPortrait === false && this._win['innerWidth'] < this._win['innerHeight'])
+    ) {
+      let win = this._win
 
       // let innerWidth = win['innerWidth'];
-      let innerWidth = win.screen.width;
+      let innerWidth = win.screen.width
       // let innerHeight = win['innerHeight'];
-      let innerHeight = win.screen.height;
+      let innerHeight = win.screen.height
 
       // we're keeping track of portrait and landscape dimensions
       // separately because the virtual keyboard can really mess
       // up accurate values when the keyboard is up
       if (win.screen.width > 0 && win.screen.height > 0) {
+        /* istanbul ignore next  */
         if (innerWidth < innerHeight) {
-
           // the device is in portrait
           // we have to do fancier checking here
           // because of the virtual keyboard resizing
           // the window
           if (this._pW <= innerWidth) {
-            console.debug('setting _isPortrait to true');
-            this._isPortrait = true;
-            this._pW = innerWidth;
+            console.debug('setting _isPortrait to true')
+            this._isPortrait = true
+            this._pW = innerWidth
           }
 
           if (this._pH <= innerHeight) {
-            console.debug('setting _isPortrait to true');
-            this._isPortrait = true;
-            this._pH = innerHeight;
+            console.debug('setting _isPortrait to true')
+            this._isPortrait = true
+            this._pH = innerHeight
           }
-
         } else {
           // the device is in landscape
           if (this._lW !== innerWidth) {
-            console.debug('setting _isPortrait to false');
-            this._isPortrait = false;
-            this._lW = innerWidth;
+            console.debug('setting _isPortrait to false')
+            this._isPortrait = false
+            this._lW = innerWidth
           }
 
           if (this._lH !== innerHeight) {
-            console.debug('setting _isPortrait to false');
-            this._isPortrait = false;
-            this._lH = innerHeight;
+            console.debug('setting _isPortrait to false')
+            this._isPortrait = false
+            this._lH = innerHeight
           }
         }
-
       }
     }
   }
@@ -1046,6 +1069,6 @@ export class Platform {
  * @return {Platform}
  */
 export function setupPlatform(platformConfigs: PlatformConfigs): Platform {
-  const _finalConf = mergeConfigs(PLATFORM_CONFIGS, platformConfigs);
-  return new Platform(_finalConf);
+  const _finalConf = mergeConfigs(PLATFORM_CONFIGS, platformConfigs)
+  return new Platform(_finalConf)
 }
