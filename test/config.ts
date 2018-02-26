@@ -1,6 +1,6 @@
 import { Platform } from '../src/platform'
 
-export interface Win extends Window {
+interface Win extends Window {
   dd?: any
 }
 

@@ -463,9 +463,9 @@ export class Platform {
   // /**
   //  * @hidden
   //  */
-  // setWindow(win: Window) {
-  //   this._win = win;
-  // }
+  setWindow(win: Window) {
+    this._win = win
+  }
 
   /**
    * @hidden
@@ -916,6 +916,7 @@ export class Platform {
     for (let name in this._registry) {
       let _tmp: PlatformNode = new PlatformNode(this._registry, name)
 
+      /* istanbul ignore if */
       if (_tmp.type === undefined) {
         console.warn('Each platform environment needs to pass in the specified "type" attribute')
       }
@@ -963,8 +964,7 @@ export class Platform {
     }
     try {
       let opts = Object.defineProperty({}, 'passive', {
-        get: () => {
-          /* istanbul ignore next */
+        get: /* istanbul ignore next */ () => {
           this._uiEvtOpts = true
         }
       })
@@ -974,9 +974,9 @@ export class Platform {
     }
 
     // add the window resize event listener XXms after
+    /* istanbul ignore next */
     window.setTimeout(() => {
       let timerId: number
-      /* istanbul ignore next */
       this.registerListener(
         this._win,
         'resize',

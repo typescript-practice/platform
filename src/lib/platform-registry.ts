@@ -1,7 +1,7 @@
-'use strict';
+'use strict'
 
-import {Platform} from '../platform';
-import {PlatformConfig, Type} from './interface';
+import { Platform } from '../platform'
+import { PlatformConfig, Type } from './interface'
 import {
   isAndroid,
   isCordova,
@@ -14,181 +14,177 @@ import {
   isMobile,
   isTablet,
   isWindows
-} from './platform-utils';
+} from './platform-utils'
 
 const PLATFORM_CONFIGS: { [key: string]: PlatformConfig } = {
   /**
    * core
    */
-  'core': {
+  core: {
     type: Type.BASE,
     settings: {
-      mode: 'md',
+      mode: 'md'
     },
     isMatch() {
-      return true;
+      return true
     }
   },
 
-  'mobile': {
+  mobile: {
     type: Type.PLATFORM,
     settings: {
-      hoverCSS: false,
+      hoverCSS: false
     },
     isMatch(plt: Platform) {
-      return isMobile(plt);
+      return isMobile(plt)
     }
   },
 
   /**
    * tablet: 平板电脑, pad
    */
-  'tablet': {
+  tablet: {
     type: Type.PLATFORM,
     settings: {
-      hoverCSS: false,
+      hoverCSS: false
     },
     isMatch(plt: Platform) {
-      return isTablet(plt);
+      return isTablet(plt)
     }
   },
 
   /**
    * desktop: 桌面
    */
-  'desktop': {
+  desktop: {
     type: Type.PLATFORM,
     settings: {
-      hoverCSS: true,
+      hoverCSS: true
     },
     isMatch(plt: Platform) {
-      return isDesktop(plt);
+      return isDesktop(plt)
     }
   },
 
   /**
    * android
    */
-  'android': {
+  android: {
     type: Type.SYSTEM,
     settings: {
       mode: 'md',
       autoFocusAssist: 'immediate',
       tapPolyfill: true,
-      scrollAssist: true,
+      scrollAssist: true
     },
     isMatch(plt: Platform) {
-      return isAndroid(plt);
+      return isAndroid(plt)
     },
     versionParser(plt: Platform) {
-      return plt.matchUserAgentVersion(/Android (\d+).(\d+)?/);
+      return plt.matchUserAgentVersion(/Android (\d+).(\d+)?/)
     }
   },
 
   /**
    * ios
    */
-  'ios': {
+  ios: {
     type: Type.SYSTEM,
     settings: {
       mode: 'ios',
       autoFocusAssist: 'delay',
       tapPolyfill: isIosUIWebView,
-      scrollAssist: false,
+      scrollAssist: false
     },
     isMatch(plt: Platform) {
-      return isIos(plt);
+      return isIos(plt)
     },
     versionParser(plt: Platform) {
-      return plt.matchUserAgentVersion(/OS (\d+)_(\d+)?/);
+      return plt.matchUserAgentVersion(/OS (\d+)_(\d+)?/)
     }
   },
 
   /**
    * Desktop: Windows
    */
-  'windows': {
+  windows: {
     type: Type.SYSTEM,
     settings: {
       mode: 'wp',
-      autoFocusAssist: 'immediate',
+      autoFocusAssist: 'immediate'
     },
     isMatch(plt: Platform): boolean {
-      return isWindows(plt);
-    },
-    versionParser(plt: Platform): any {
-      // TODO: no win mobile drive
-      return plt.matchUserAgentVersion(/Windows Phone (\d+).(\d+)?/);
+      return isWindows(plt)
     }
   },
 
-  'mac': {
+  mac: {
     type: Type.SYSTEM,
     isMatch(plt: Platform): boolean {
-      return isMac(plt);
-    },
+      return isMac(plt)
+    }
   },
 
   /**
    * for desktop
    */
-  'linux': {
+  linux: {
     type: Type.SYSTEM,
     isMatch(plt: Platform): boolean {
-      return isLinux(plt);
-    },
+      return isLinux(plt)
+    }
   },
 
   /**
    * iphone
    */
-  'iphone': {
+  iphone: {
     type: Type.BRAND,
     isMatch(plt: Platform) {
-      return plt.isPlatformMatch('iphone');
+      return plt.isPlatformMatch('iphone')
     }
   },
 
   /**
    * ipad
    */
-  'ipad': {
+  ipad: {
     type: Type.BRAND,
     settings: {
-      keyboardHeight: 500,
+      keyboardHeight: 500
     },
     isMatch(plt: Platform) {
-      return plt.isPlatformMatch('ipad');
+      return plt.isPlatformMatch('ipad')
     }
   },
 
   /**
    * cordova
    */
-  'cordova': {
+  cordova: {
     type: Type.ENVIRONMENT,
-    initialize: function (plt: Platform) {
+    initialize: /* istanbul ignore next */ function(plt: Platform) {
       // prepare a custom "ready" for cordova "deviceready"
-      plt.prepareReady = function () {
+      plt.prepareReady = function() {
         // 1) ionic bootstrapped
-        plt.windowLoad(function (win: Window, doc: HTMLDocument) {
+        plt.windowLoad(function(win: Window, doc: HTMLDocument) {
           // 2) window onload triggered or completed
-          doc.addEventListener('deviceready', function () {
+          doc.addEventListener('deviceready', function() {
             // 3) cordova deviceready event triggered
 
             // add cordova listeners to emit platform events
-            doc.addEventListener('backbutton', function (ev: Event) {
+            doc.addEventListener('backbutton', function(ev: Event) {
               // TODO: backButton
               // plt.backButton.emit(ev);
-            });
-            doc.addEventListener('pause', function (ev: Event) {
+            })
+            doc.addEventListener('pause', function(ev: Event) {
               // TODO: pause
               // plt.pause.emit(ev);
-            });
-            doc.addEventListener('resume', function (ev: Event) {
+            })
+            doc.addEventListener('resume', function(ev: Event) {
               // TODO: resume
               // plt.resume.emit(ev);
-            });
+            })
 
             // // cordova has its own exitApp method
             // plt.exitApp = function () {
@@ -196,33 +192,33 @@ const PLATFORM_CONFIGS: { [key: string]: PlatformConfig } = {
             // };
 
             // cordova has fully loaded and we've added listeners
-            plt.triggerReady('cordova');
-          });
-        });
-      };
+            plt.triggerReady('cordova')
+          })
+        })
+      }
     },
     isMatch(plt: Platform): boolean {
-      return isCordova(plt);
+      return isCordova(plt)
     }
   },
 
   /**
    * electron
    */
-  'electron': {
+  electron: {
     type: Type.ENVIRONMENT,
-    initialize: function (plt: Platform) {
-      plt.prepareReady = function () {
+    initialize: /* istanbul ignore next */ function(plt: Platform) {
+      plt.prepareReady = function() {
         // 1) ionic bootstrapped
-        plt.windowLoad(function () {
-          plt.triggerReady('electron');
-        });
-      };
+        plt.windowLoad(function() {
+          plt.triggerReady('electron')
+        })
+      }
     },
     isMatch(plt: Platform): boolean {
-      return isElectron(plt);
+      return isElectron(plt)
     }
-  },
-};
+  }
+}
 
 export default PLATFORM_CONFIGS

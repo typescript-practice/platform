@@ -8,6 +8,12 @@ import PLATFORM_CONFIGS from '../src/lib/platform-registry'
 const UA =
   'Mozilla/5.0 (iPhone; CPU iPhone OS 10_2_1 like Mac OS X) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30 AlipayDefined(nt:WIFI,ws:360|640|1.5) AliApp(AP/9.0.1.073001) AlipayClient/9.0.1.073001   GCanvas/1.4.2.15'
 
+const UA_FAKE =
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 10_2_1 like Mac OS X) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30 AlipayDefined(nt:WIFI,ws:360|640|1.5) AliApp(AP/9.0.1.073001) AlipayClient/9.0.1.073001   GCanvas/1.4.2.15 qq'
+
+const UA_NO_VERSION =
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 10_2_1 like Mac OS X) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30 AlipayDefined(nt:WIFI,ws:360|640|1.5) AliApp(AP/9.0.1.073001) AlipayClient/-.-.0.073001   GCanvas/1.4.2.15 qq'
+
 describe('Normal Test', function() {
   const plt = setupPlatform(config)
 
@@ -30,7 +36,13 @@ describe('Normal Test', function() {
   })
 
   it('versions()', function() {
-    expect(plt.versions()).toEqual({})
+    const _plt = setupPlatform(config)
+    _plt.setUserAgent(UA)
+    _plt.init()
+    expect(_plt.versions()).toEqual({
+      alipay: { major: 9, minor: 0, num: 9, patch: 1, str: '9.0.1' },
+      ios: { major: 10, minor: 2, num: 10.2, patch: 0, str: '10.2.0' }
+    })
   })
 
   it('platforms()', function() {
@@ -72,6 +84,12 @@ describe('Normal Test', function() {
     expect(plt.navigatorPlatform()).toEqual('MacIntel')
     plt.setNavigatorPlatform('')
     expect(plt.navigatorPlatform()).toEqual('')
+  })
+
+  it('userAgent()', function() {
+    expect(plt.userAgent()).toEqual(
+      'Mozilla/5.0 (darwin) AppleWebKit/537.36 (KHTML, like Gecko) jsdom/11.6.2'
+    )
   })
 
   it('isPortrait()', function() {
@@ -120,9 +138,22 @@ describe('Normal Test', function() {
     expect(_plt.testUserAgent('anything')).toBeFalsy()
   })
 
-  it('isPlatformMatch()', function() {
+  it('isPlatformMatch():UA', function() {
     const _plt = setupPlatform(config)
     _plt.setUserAgent(UA)
     expect(_plt.isPlatformMatch('alipay', ['alipay', 'alipayclient'], ['qq'])).toBeTruthy()
+  })
+
+  it('isPlatformMatch():UA_FAKE', function() {
+    const _plt = setupPlatform(config)
+    _plt.setUserAgent(UA_FAKE)
+    expect(_plt.isPlatformMatch('alipay', ['alipay', 'alipayclient'], ['qq'])).toBeFalsy()
+  })
+
+  it('setQueryParams()', function() {
+    const _plt = setupPlatform(config)
+    _plt.setQueryParams('http://xxx.xx.xx?platform=core;mobile;ios;wechat')
+    _plt.init()
+    expect(_plt.platforms()).toEqual(['core', 'mobile', 'ios', 'wechat'])
   })
 })
