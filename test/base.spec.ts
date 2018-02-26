@@ -11,8 +11,8 @@ const UA =
 const UA_FAKE =
   'Mozilla/5.0 (iPhone; CPU iPhone OS 10_2_1 like Mac OS X) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30 AlipayDefined(nt:WIFI,ws:360|640|1.5) AliApp(AP/9.0.1.073001) AlipayClient/9.0.1.073001   GCanvas/1.4.2.15 qq'
 
-const UA_NO_VERSION =
-  'Mozilla/5.0 (iPhone; CPU iPhone OS 10_2_1 like Mac OS X) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30 AlipayDefined(nt:WIFI,ws:360|640|1.5) AliApp(AP/9.0.1.073001) AlipayClient/-.-.0.073001   GCanvas/1.4.2.15 qq'
+const UA_ANDROID =
+  'Mozilla/5.0 (Linux; Android 5.1.1; Nexus 6 Build/LYZ28E) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.167 Mobile Safari/537.36'
 
 describe('Normal Test', function() {
   const plt = setupPlatform(config)
@@ -35,13 +35,22 @@ describe('Normal Test', function() {
     expect(plt.is('core')).toBeTruthy()
   })
 
-  it('versions()', function() {
+  it('versions():ios', function() {
     const _plt = setupPlatform(config)
     _plt.setUserAgent(UA)
     _plt.init()
     expect(_plt.versions()).toEqual({
       alipay: { major: 9, minor: 0, num: 9, patch: 1, str: '9.0.1' },
       ios: { major: 10, minor: 2, num: 10.2, patch: 0, str: '10.2.0' }
+    })
+  })
+
+  it('versions():android', function() {
+    const _plt = setupPlatform(config)
+    _plt.setUserAgent(UA_ANDROID)
+    _plt.init()
+    expect(_plt.versions()).toEqual({
+      android: { major: 5, minor: 1, num: 5.1, patch: 0, str: '5.1.0' }
     })
   })
 

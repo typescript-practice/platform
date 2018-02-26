@@ -1,4 +1,4 @@
-import { Platform, setupPlatform } from '../src/platform'
+import { mergeConfigs, Platform, setupPlatform } from '../src/platform'
 
 const config = {
   core: {
@@ -11,7 +11,7 @@ const config = {
   }
 }
 
-describe('Test platform.js without mock config', function() {
+describe('Test ready()', function() {
   const plt = setupPlatform(config)
 
   it('is()', function() {
@@ -28,5 +28,20 @@ describe('Test platform.js without mock config', function() {
         cb()
       }
     )
+  })
+})
+
+describe('Test mergeConfigs', function() {
+  it('mergeConfigs(undefined,undefined)', function() {
+    const res = mergeConfigs(undefined as any, undefined as any)
+    expect(res).toEqual({})
+  })
+
+  it('mergeConfigs(fn,fn)', function() {
+    const fn = function() {
+      // empty
+    }
+    const res = mergeConfigs(fn as any, fn as any)
+    expect(res).toEqual({})
   })
 })
