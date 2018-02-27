@@ -59,11 +59,4 @@ export function getCss(docEle: HTMLElement) {
   return css
 }
 
-// export function isTextInput(ele: any) {
-//   return !!ele &&
-//     (ele.tagName === 'TEXTAREA' ||
-//       ele.contentEditable === 'true' ||
-//       (ele.tagName === 'INPUT' && !(NON_TEXT_INPUT_REGEX.test(ele.type))));
-// }
-
 export const NON_TEXT_INPUT_REGEX = /^(radio|checkbox|range|file|submit|reset|color|image|button)$/i

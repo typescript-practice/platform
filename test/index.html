@@ -21,7 +21,7 @@
     console.log(window.platform)
     var setupPlatform = window.platform.setupPlatform;
 
-    var plt = setupPlatform({
+    var plt = window.plt = setupPlatform({
       'wechat': {
         type: 4,
         initialize: function (plt) {

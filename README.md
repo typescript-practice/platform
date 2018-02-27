@@ -13,6 +13,10 @@
 
 Match the current platform and get the platform parameters and execute the initialization process.
 
+```
+tp-platform = detect-platform + get-platform-setting + customer-initialize-platform
+```
+
 ## Example
 
 ```js

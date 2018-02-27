@@ -188,8 +188,6 @@ export class Platform {
    * ```
    */
   platforms(): Array<string> {
-    // get the array of active platforms, which also knows the hierarchy,
-    // with the last one the most important
     return this._platforms
   }
 
@@ -286,7 +284,6 @@ export class Platform {
    */
   prepareReady() {
     const self = this
-
     /* istanbul ignore else */
     if (self._doc.readyState === 'complete' || self._doc.readyState === 'interactive') {
       self.triggerReady('dom')
@@ -460,9 +457,9 @@ export class Platform {
     return this._win
   }
 
-  // /**
-  //  * @hidden
-  //  */
+  /**
+   * @hidden
+   */
   setWindow(win: Window) {
     this._win = win
   }
@@ -474,12 +471,12 @@ export class Platform {
     return this._doc
   }
 
-  // /**
-  //  * @hidden
-  //  */
-  // setDocument(doc: HTMLDocument) {
-  //   this._doc = doc;
-  // }
+  /**
+   * @hidden
+   */
+  setDocument(doc: HTMLDocument) {
+    this._doc = doc
+  }
 
   /**
    * @hidden
@@ -564,33 +561,12 @@ export class Platform {
     return this._isPortrait ? this._pH : this._lH
   }
 
-  // /**
-  //  * @hidden
-  //  */
-  // getElementComputedStyle(ele: HTMLElement, pseudoEle?: string) {
-  //   return this._win['getComputedStyle'](ele, pseudoEle);
-  // }
-
-  // /**
-  //  * @hidden
-  //  */
-  // getElementFromPoint(x: number, y: number) {
-  //   return this._doc['elementFromPoint'](x, y) as HTMLElement;
-  // }
-
-  // /**
-  //  * @hidden
-  //  */
-  // getElementBoundingClientRect(ele: HTMLElement) {
-  //   return ele['getBoundingClientRect']();
-  // }
-
   /**
    * Returns `true` if the app is in portait mode.
    */
-  isPortrait(): boolean | null {
+  isPortrait(): boolean {
     this._calcDim()
-    return this._isPortrait
+    return this._isPortrait as boolean
   }
 
   /**
@@ -639,33 +615,6 @@ export class Platform {
     return unReg
   }
 
-  // /**
-  //  * @hidden
-  //  */
-  // transitionEnd(el: HTMLElement, callback: { (ev?: TransitionEvent): void }) {
-  //   const unRegs: Function[] = [];
-  //
-  //   function unregister() {
-  //     unRegs.forEach(unReg => {
-  //       unReg();
-  //     });
-  //   }
-  //
-  //   function onTransitionEnd(ev: TransitionEvent) {
-  //     if (el === ev.target) {
-  //       unregister();
-  //       callback(ev);
-  //     }
-  //   }
-  //
-  //   if (el) {
-  //     this.registerListener(el, 'webkitTransitionEnd', onTransitionEnd as any, {}, unRegs);
-  //     this.registerListener(el, 'transitionend', onTransitionEnd as any, {}, unRegs);
-  //   }
-  //
-  //   return unregister;
-  // }
-
   /**
    * @hidden
    */
@@ -689,46 +638,6 @@ export class Platform {
       )
     }
   }
-
-  // /**
-  //  * @hidden
-  //  */
-  // isActiveElement(ele: HTMLElement) {
-  //   return !!(ele && (this.getActiveElement() === ele));
-  // }
-
-  // /**
-  //  * @hidden
-  //  */
-  // getActiveElement() {
-  //   return this._doc['activeElement'];
-  // }
-
-  // /**
-  //  * @hidden
-  //  */
-  // hasFocus(ele: HTMLElement) {
-  //   return !!((ele && (this.getActiveElement() === ele)) && ele.parentElement && (ele.parentElement.querySelector(':focus') === ele));
-  // }
-
-  // /**
-  //  * @hidden
-  //  */
-  // hasFocusedTextInput() {
-  //   const ele = this.getActiveElement();
-  //   if (ele && ele.parentElement && isTextInput(ele)) {
-  //     return (ele.parentElement.querySelector(':focus') === ele);
-  //   }
-  //   return false;
-  // }
-
-  // /**
-  //  * @hidden
-  //  */
-  // focusOutActiveElement() {
-  //   const activeElement: any = this.getActiveElement();
-  //   activeElement && activeElement.blur && activeElement.blur();
-  // }
 
   // Platform Registry
   // **********************************************
@@ -983,11 +892,7 @@ export class Platform {
         () => {
           window.clearTimeout(timerId)
           timerId = window.setTimeout(() => {
-            // setting _isPortrait to null means the
-            // dimensions will need to be looked up again
-            // if (this.hasFocusedTextInput() === false) {
             this._isPortrait = null
-            // }
             // TODO: resize
             // this.resize.emit();
           }, 200)
@@ -998,62 +903,24 @@ export class Platform {
   }
 
   private _calcDim() {
-    // we're caching window dimensions so that
-    // we're not forcing many layouts
-    // if _isPortrait is null then that means
-    // the dimensions needs to be looked up again
-    // this also has to cover an edge case that only
-    // happens on iOS 10 (not other versions of iOS)
-    // where window.innerWidth is always bigger than
-    // window.innerHeight when it is first measured,
-    // even when the device is in portrait but
-    // the second time it is measured it is correct.
-    // Hopefully this check will not be needed in the future
     if (
       this._isPortrait === null ||
       (this._isPortrait === false && this._win['innerWidth'] < this._win['innerHeight'])
     ) {
       let win = this._win
-
-      // let innerWidth = win['innerWidth'];
       let innerWidth = win.screen.width
-      // let innerHeight = win['innerHeight'];
       let innerHeight = win.screen.height
-
-      // we're keeping track of portrait and landscape dimensions
-      // separately because the virtual keyboard can really mess
-      // up accurate values when the keyboard is up
-      if (win.screen.width > 0 && win.screen.height > 0) {
+      if (innerWidth > 0 && innerHeight > 0) {
         /* istanbul ignore next  */
         if (innerWidth < innerHeight) {
-          // the device is in portrait
-          // we have to do fancier checking here
-          // because of the virtual keyboard resizing
-          // the window
-          if (this._pW <= innerWidth) {
-            console.debug('setting _isPortrait to true')
-            this._isPortrait = true
-            this._pW = innerWidth
-          }
-
-          if (this._pH <= innerHeight) {
-            console.debug('setting _isPortrait to true')
-            this._isPortrait = true
-            this._pH = innerHeight
-          }
+          this._isPortrait = true
+          this._pW = innerWidth
+          this._pH = innerHeight
         } else {
           // the device is in landscape
-          if (this._lW !== innerWidth) {
-            console.debug('setting _isPortrait to false')
-            this._isPortrait = false
-            this._lW = innerWidth
-          }
-
-          if (this._lH !== innerHeight) {
-            console.debug('setting _isPortrait to false')
-            this._isPortrait = false
-            this._lH = innerHeight
-          }
+          this._isPortrait = false
+          this._lW = innerWidth
+          this._lH = innerHeight
         }
       }
     }
