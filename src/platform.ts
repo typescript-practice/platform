@@ -117,15 +117,6 @@ export class Platform {
       this._readyReject = rej
     })
 
-    // TODO: back button
-    // this.backButton.subscribe(() => {
-    //   // the hardware back button event has been fired
-    //   console.debug('hardware back button');
-    //
-    //   // decide which backbutton action should run
-    //   this.runBackButtonAction();
-    // });
-
     this.init()
   }
 
@@ -357,95 +348,6 @@ export class Platform {
   lang(): string {
     return this._lang
   }
-
-  // Methods meant to be overridden by the engine
-  // **********************************************
-  // Provided NOOP methods so they do not error when
-  // called by engines (the browser)that do not provide them
-
-  // /**
-  //  * @hidden
-  //  */
-  // exitApp() {
-  // }
-
-  // Events meant to be triggered by the engine
-  // **********************************************
-
-  // TODO: Provide || Write EventEmitter Lib
-  // /**
-  //  * @hidden
-  //  */
-  // backButton: EventEmitter<Event> = new EventEmitter<Event>();
-
-  // /**
-  //  * The pause event emits when the native platform puts the application
-  //  * into the background, typically when the user switches to a different
-  //  * application. This event would emit when a Cordova app is put into
-  //  * the background, however, it would not fire on a standard web browser.
-  //  */
-  // pause: EventEmitter<Event> = new EventEmitter<Event>();
-
-  // /**
-  //  * The resume event emits when the native platform pulls the application
-  //  * out from the background. This event would emit when a Cordova app comes
-  //  * out from the background, however, it would not fire on a standard web browser.
-  //  */
-  // resume: EventEmitter<Event> = new EventEmitter<Event>();
-
-  // /**
-  //  * The resize event emits when the browser window has changed dimensions. This
-  //  * could be from a browser window being physically resized, or from a device
-  //  * changing orientation.
-  //  */
-
-  // resize: EventEmitter<Event> = new EventEmitter<Event>();
-
-  // /**
-  //  * The back button event is triggered when the user presses the native
-  //  * platform's back button, also referred to as the "hardware" back button.
-  //  * This event is only used within Cordova apps running on Android and
-  //  * Windows platforms. This event is not fired on iOS since iOS doesn't come
-  //  * with a hardware back button in the same sense an Android or Windows device
-  //  * does.
-  //  *
-  //  * Registering a hardware back button action and setting a priority allows
-  //  * apps to control which action should be called when the hardware back
-  //  * button is pressed. This method decides which of the registered back button
-  //  * actions has the highest priority and should be called.
-  //  *
-  //  * @param {Function} fn Called when the back button is pressed,
-  //  * if this registered action has the highest priority.
-  //  * @param {number} priority Set the priority for this action. Only the highest priority will execute. Defaults to `0`.
-  //  * @returns {Function} A function that, when called, will unregister
-  //  * the back button action.
-  //  */
-  // registerBackButtonAction(fn: Function, priority: number = 0): Function {
-  //   const action: BackButtonAction = {fn, priority};
-  //
-  //   this._bbActions.push(action);
-  //
-  //   // return a function to unregister this back button action
-  //   return () => {
-  //     // removeArrayItem(this._bbActions, action);
-  //   };
-  // }
-
-  // /**
-  //  * @hidden
-  //  */
-  // runBackButtonAction() {
-  //   // decide which one back button action should run
-  //   let winner: any;
-  //   this._bbActions.forEach((action: BackButtonAction) => {
-  //     if (!winner || action.priority >= winner.priority) {
-  //       winner = action;
-  //     }
-  //   });
-  //
-  //   // run the winning action if there is one
-  //   winner && winner.fn && winner.fn();
-  // }
 
   // Getter/Setter Methods
   // **********************************************
