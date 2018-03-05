@@ -1,7 +1,7 @@
 {
   "name": "tp-platform",
   "version": "1.0.0",
-  "description": "Used to obtain the current platform parameters and configuration",
+  "description": "Match the current platform and get the platform parameters and execute the initialization process.",
   "keywords": [
     "platform",
     "platform configuration"
