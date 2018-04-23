@@ -444,9 +444,9 @@ export class Platform {
           _res[_newKey] = false
         } else if (_testValue === 'true') {
           _res[_newKey] = true
-        } else if (parseInt(_testValue).toString() === _testValue) {
+        } else if (parseInt(_testValue, 10).toString() === _testValue) {
           // just for int
-          _res[_newKey] = parseInt(_testValue)
+          _res[_newKey] = parseInt(_testValue, 10)
         } else {
           // others
           _res[_newKey] = _testValue
