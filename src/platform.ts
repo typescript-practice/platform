@@ -432,11 +432,27 @@ export class Platform {
     const _raw = this._qp.data
     const _res: any = {}
     for (let keyName in _raw) {
+      let _testValue = decodeURIComponent(_raw[keyName])
+
       if (/^vm/.test(keyName)) {
-        let _newKey = keyName.replace('vm', '').toLowerCase()
-        _res[_newKey] = _raw[keyName]
+        let _newKey = keyName.replace('vm', '')
+        let _tmpArr = _newKey.split('')
+        _tmpArr[0] = _tmpArr[0].toLowerCase()
+        _newKey = _tmpArr.join('')
+
+        if (_testValue === 'false') {
+          _res[_newKey] = false
+        } else if (_testValue === 'true') {
+          _res[_newKey] = true
+        } else if (parseInt(_testValue).toString() === _testValue) {
+          // just for int
+          _res[_newKey] = parseInt(_testValue)
+        } else {
+          // others
+          _res[_newKey] = _testValue
+        }
       } else {
-        _res[keyName] = _raw[keyName]
+        _res[keyName] = _testValue
       }
     }
     return _res

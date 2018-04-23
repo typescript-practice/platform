@@ -61,7 +61,7 @@
     "testEnvironmentOptions": {
       "userAgent": "AppleWebKit/537.36 (KHTML, like Gecko) jsdom/11.6.2"
     },
-    "testURL": "http://xx.xx.com?vmMode=ios&vmText=string",
+    "testURL": "http://xx.xx.com?vmMode=ios&vmText=string&vmHideNavBar=false&vmDurning=13&vmWidth=44px",
     "transform": {
       ".(ts|tsx)": "<rootDir>/node_modules/ts-jest/preprocessor.js"
     },

@@ -81,11 +81,19 @@ describe('Normal Test', function() {
   })
 
   it('settings()', function() {
-    expect(plt.settings()).toEqual({ mode: 'ios', text: 'string' })
+    expect(plt.settings()).toEqual({
+      durning: 13,
+      hideNavBar: false,
+      mode: 'ios',
+      text: 'string',
+      width: '44px'
+    })
   })
 
   it('url()', function() {
-    expect(plt.url()).toEqual('http://xx.xx.com/?vmMode=ios&vmText=string')
+    expect(plt.url()).toEqual(
+      'http://xx.xx.com/?vmMode=ios&vmText=string&vmHideNavBar=false&vmDurning=13&vmWidth=44px'
+    )
   })
 
   it('setNavigatorPlatform()', function() {
