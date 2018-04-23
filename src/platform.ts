@@ -1,13 +1,15 @@
 'use strict'
 
+import registerListener from 'tp-register-listener'
 import { getCss } from './lib/dom'
 import QueryParams from './lib/query-params'
 import PLATFORM_CONFIGS from './lib/platform-registry'
 import mergeConfigs from './lib/merge-configs'
 import PlatformNode from './lib/PlatformNode'
+import assign from 'lodash/assign'
+
 import {
   DocumentDirection,
-  EventListenerOptions,
   PlatformConfig,
   PlatformConfigs,
   PlatformVersion,
@@ -81,7 +83,7 @@ export class Platform {
   private _lW = 0
   private _lH = 0
   private _isPortrait: boolean | null = null
-  private _uiEvtOpts = false
+  private _uiEvtOpts = (registerListener as any)._uiEvtOpts
 
   constructor(platformConfigs: PlatformConfigs) {
     const doc = document
@@ -423,6 +425,24 @@ export class Platform {
   }
 
   /**
+   * 获取带有私有前缀的url参数对象
+   * @private
+   */
+  getQueryData() {
+    const _raw = this._qp.data
+    const _res: any = {}
+    for (let keyName in _raw) {
+      if (/^vm/.test(keyName)) {
+        let _newKey = keyName.replace('vm', '').toLowerCase()
+        _res[_newKey] = _raw[keyName]
+      } else {
+        _res[keyName] = _raw[keyName]
+      }
+    }
+    return _res
+  }
+
+  /**
    * Get the current url.
    */
   url() {
@@ -478,45 +498,6 @@ export class Platform {
     return !this.isPortrait()
   }
 
-  /* istanbul ignore next */
-  /**
-   * @hidden
-   * Built to use modern event listener options, like "passive".
-   * If options are not supported, then just return a boolean which
-   * represents "capture". Returns a method to remove the listener.
-   */
-  registerListener(
-    ele: any,
-    eventName: string,
-    callback: { (ev?: UIEvent): void },
-    opts: EventListenerOptions,
-    unregisterListenersCollection?: Function[]
-  ): Function {
-    // use event listener options when supported
-    // otherwise it's just a boolean for the "capture" arg
-    const listenerOpts: any = this._uiEvtOpts
-      ? {
-          capture: !!opts.capture,
-          passive: !!opts.passive
-        }
-      : !!opts.capture
-
-    let unReg: Function
-
-    // use the native addEventListener
-    ele['addEventListener'](eventName, callback, listenerOpts)
-
-    unReg = function unregisterListener() {
-      ele['removeEventListener'](eventName, callback, listenerOpts)
-    }
-
-    if (unregisterListenersCollection) {
-      unregisterListenersCollection.push(unReg)
-    }
-
-    return unReg
-  }
-
   /**
    * @hidden
    */
@@ -529,7 +510,7 @@ export class Platform {
     if (doc.readyState === 'complete') {
       callback(win, doc)
     } else {
-      unreg = this.registerListener(
+      unreg = registerListener(
         win,
         'load',
         () => {
@@ -754,6 +735,8 @@ export class Platform {
       // 4. reduce settings
       _tmp.reduceSettings(this._settings)
 
+      assign(this._settings, this.getQueryData())
+
       // 5. initialize
       _tmp.initialize(this)
     }
@@ -768,27 +751,11 @@ export class Platform {
   }
 
   private _initEvents() {
-    // Test via a getter in the options object to see if the passive property is accessed
-    /* istanbul ignore next */
-    const NOOP = function() {
-      // empty
-    }
-    try {
-      let opts = Object.defineProperty({}, 'passive', {
-        get: /* istanbul ignore next */ () => {
-          this._uiEvtOpts = true
-        }
-      })
-      this._win.addEventListener('optsTest', NOOP, opts)
-    } catch (e) {
-      // empty
-    }
-
     // add the window resize event listener XXms after
     /* istanbul ignore next */
     window.setTimeout(() => {
       let timerId: number
-      this.registerListener(
+      registerListener(
         this._win,
         'resize',
         () => {

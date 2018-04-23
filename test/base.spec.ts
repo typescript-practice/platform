@@ -81,11 +81,11 @@ describe('Normal Test', function() {
   })
 
   it('settings()', function() {
-    expect(plt.settings()).toEqual({ mode: 'md' })
+    expect(plt.settings()).toEqual({ mode: 'ios', text: 'string' })
   })
 
   it('url()', function() {
-    expect(plt.url()).toEqual('about:blank')
+    expect(plt.url()).toEqual('http://xx.xx.com/?vmMode=ios&vmText=string')
   })
 
   it('setNavigatorPlatform()', function() {
